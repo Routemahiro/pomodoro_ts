@@ -1,0 +1,656 @@
+
+src/main.py
+"""
+アプリケーションのメインエントリーポイント
+
+役割:
+- QApplicationの初期化
+- メインウィンドウの作成と表示
+- 各コアモジュールの初期化と連携
+
+使用するクラス/モジュール:
+- gui.main_window.MainWindow
+- core.timer.Timer
+- core.session_manager.SessionManager
+- core.task_manager.TaskManager
+- core.ai_interface.AIInterface
+- data.database.Database
+- utils.config.Config
+
+注意点:
+- アプリケーション全体の設定（Config）を最初に読み込み、各モジュールに渡すこと
+- 例外処理を適切に行い、予期せぬエラーでアプリケーションが終了しないようにすること
+"""
+src/gui/main_window.py
+"""
+アプリケーションのメインウィンドウGUI
+
+役割:
+- メインウィンドウのレイアウト設定
+- 各ウィジェットの配置と管理
+- キーボードショートカットの設定
+
+主なコンポーネント:
+- TimerWidget: 左上に配置
+- CharacterWidget: 中央に大きく配置
+- DashboardWidget: 左下に配置（折りたたみ可能）
+- SlidePanel: 右側にスライドインするパネル（TaskPanel, AIChatPanel）
+- ボタン群: 右下に配置（Start Timer, Reset Timer, Tasks, AI Chat, Settings）
+
+使用するクラス/モジュール:
+- gui.timer_widget.TimerWidget
+- gui.character_widget.CharacterWidget
+- gui.dashboard_widget.DashboardWidget
+- gui.slide_panel.SlidePanel
+- gui.task_panel.TaskPanel
+- gui.ai_chat_panel.AIChatPanel
+- gui.settings_dialog.SettingsDialog
+- gui.report_window.ReportWindow
+- utils.ui_helpers
+
+注意点:
+- レスポンシブデザインを心がけ、ウィンドウサイズの変更に対応すること
+- キャラクターウィジェットが他の要素と重ならないよう、適切なz-indexを設定すること
+"""
+src/gui/timer_widget.py
+"""
+タイマー表示ウィジェット
+
+役割:
+- 現在のタイマー状態の表示
+- タイマーの開始/停止/リセット機能の提供
+
+主な機能:
+- デジタル時計形式でのタイマー表示
+- タイマーの状態に応じた表示色の変更（作業中、休憩中など）
+
+使用するクラス/モジュール:
+- core.timer.Timer
+- utils.ui_helpers
+
+注意点:
+- タイマーの状態変更時にシグナルを発行し、他のウィジェット（特にCharacterWidget）に通知すること
+"""
+src/gui/character_widget.py
+"""
+キャラクター表示ウィジェット
+
+役割:
+- キャラクター画像の表示と管理
+- タイマーの状態に応じたキャラクターの表情/姿勢の変更
+
+主な機能:
+- 透過PNG画像の表示
+- アニメーション効果（状態変化時のスムーズな遷移）
+
+使用するクラス/モジュール:
+- core.character_state.CharacterState
+- utils.ui_helpers
+
+注意点:
+- 画像リソースの効率的な管理（メモリ使用量に注意）
+- スムーズなアニメーション処理（パフォーマンスに注意）
+"""
+src/gui/dashboard_widget.py
+"""
+ダッシュボードウィジェット
+
+役割:
+- 現在の作業状況の表示
+- 今日の達成タスク数の表示
+
+主な機能:
+- 折りたたみ可能なウィジェット
+- リアルタイムでの情報更新
+
+使用するクラス/モジュール:
+- core.session_manager.SessionManager
+- core.task_manager.TaskManager
+- utils.ui_helpers
+
+注意点:
+- 情報の更新はイベントドリブンで行い、不要な再描画を避けること
+"""
+src/gui/slide_panel.py
+"""
+スライドインパネルの基本クラス
+
+役割:
+- 右側からスライドインするパネルの基本動作の実装
+
+主な機能:
+- スムーズなスライドインとスライドアウトのアニメーション
+- パネルの表示/非表示の切り替え
+
+使用するクラス/モジュール:
+- utils.ui_helpers
+
+注意点:
+- アニメーションの実装には、QPropertyAnimationを使用すること
+- パネルの表示状態を管理し、複数のパネルが同時に開かないようにすること
+"""
+src/gui/task_panel.py
+"""
+タスク管理パネル
+
+役割:
+- タスクリストの表示と管理
+- タスクの追加/編集/削除機能の提供
+
+主な機能:
+- タスクのツリー表示（メインタスクとサブタスク）
+- タスクの状態変更（未開始、進行中、完了）
+- ドラッグ&ドロップによるタスクの並べ替え
+
+使用するクラス/モジュール:
+- gui.slide_panel.SlidePanel
+- core.task_manager.TaskManager
+- utils.ui_helpers
+
+注意点:
+- 大量のタスクがある場合のパフォーマンスに注意（仮想化リストの使用を検討）
+- タスクの変更はリアルタイムでデータベースと同期すること
+"""
+src/gui/ai_chat_panel.py
+"""
+AI会話パネル
+
+役割:
+- AIとのチャットインターフェースの提供
+- AIからの提案をタスクリストに追加する機能
+
+主な機能:
+- メッセージの送受信
+- 会話履歴の表示
+- 「タスクに追加」ボタンの実装
+
+使用するクラス/モジュール:
+- gui.slide_panel.SlidePanel
+- core.ai_interface.AIInterface
+- core.task_manager.TaskManager
+- data.ai_conversation.AIConversation
+- utils.ui_helpers
+
+注意点:
+- 長文の応答や処理時間が長い場合の UI のレスポンシブ性に注意
+- APIキーが設定されていない場合の適切なエラーハンドリング
+"""
+src/gui/settings_dialog.py
+"""
+設定ダイアログ
+
+役割:
+- アプリケーション設定の表示と編集
+
+主な機能:
+- タイマー設定（作業時間、休憩時間など）
+- ChatGPT API設定
+- 通知設定
+- テーマ設定
+
+使用するクラス/モジュール:
+- data.settings_manager.SettingsManager
+- utils.ui_helpers
+
+注意点:
+- 設定変更後は即座に適用し、関連するモジュールに通知すること
+- APIキーなどの機密情報は適切に暗号化して保存すること
+"""
+src/gui/report_window.py
+"""
+レポート表示ウィンドウ
+
+役割:
+- 生産性データの視覚化と表示
+
+主な機能:
+- 日別、週別、月別の作業統計グラフ
+- タスク完了率の表示
+- 集中時間の分析
+
+使用するクラス/モジュール:
+- data.data_analyzer.DataAnalyzer
+- utils.ui_helpers
+
+注意点:
+- 大量のデータを扱う場合のパフォーマンスに注意
+- グラフ描画にはmatplotlibやPyQtChartを使用し、見やすい視覚化を心がけること
+"""
+src/core/timer.py
+"""
+タイマーのコアロジック
+
+役割:
+- ポモドーロタイマーの実装
+- 作業時間、短休憩、長休憩の管理
+
+主な機能:
+- タイマーの開始、停止、リセット
+- 時間経過の追跡
+- セッション（作業→休憩）の自動切り替え
+
+使用するクラス/モジュール:
+- utils.config.Config
+- core.notification_manager.NotificationManager
+
+注意点:
+- マルチスレッド環境での正確な時間管理に注意
+- タイマー状態の変更時には適切にシグナルを発行し、GUI更新を促すこと
+"""
+src/core/session_manager.py
+"""
+セッション管理
+
+役割:
+- 現在のセッション状態の管理
+- セッション履歴の記録
+
+主な機能:
+- セッションの開始、終了、一時停止
+- セッション統計の計算（総作業時間、完了したポモドーロ数など）
+
+使用するクラス/モジュール:
+- data.database.Database
+- utils.config.Config
+
+注意点:
+- セッションデータの整合性を保つこと（途中で異常終了した場合の処理など）
+- 長期間の使用でもパフォーマンスが低下しないよう、適切なデータ管理を行うこと
+"""
+src/core/activity_tracker.py
+"""
+アプリケーション使用状況追跡
+
+役割:
+- アクティブウィンドウの監視
+- アプリケーション使用時間の記録
+
+主な機能:
+- 現在のアクティブウィンドウの取得（OS APIを使用）
+- アプリケーションごとの使用時間の集計
+
+使用するクラス/モジュール:
+- data.database.Database
+- utils.config.Config
+
+注意点:
+- OSごとの差異に対応すること（Windows、macOS、Linuxなど）
+- プライバシーに配慮し、必要最小限の情報のみを記録すること
+"""
+src/core/task_manager.py
+"""
+タスク管理のコアロジック
+
+役割:
+- タスクの追加、編集、削除、状態管理
+
+主な機能:
+- タスクのCRUD操作
+- タスクの階層構造（メインタスク、サブタスク）の管理
+- タスクの状態遷移（未開始→進行中→完了）
+
+使用するクラス/モジュール:
+- data.database.Database
+- data.task_data.TaskData
+
+注意点:
+- タスクデータの一貫性を保つこと（親タスクと子タスクの関係など）
+- 大量のタスクがある場合のパフォーマンスに注意
+"""
+src/core/ai_interface.py
+"""
+AI (ChatGPT) とのインターフェース
+
+役割:
+- ChatGPT APIとの通信
+- AIの応答の解析とタスク分解
+
+主な機能:
+- APIリクエストの送信と応答の受信
+- 応答のJSON解析とタスクデータへの変換
+
+使用するクラス/モジュール:
+- utils.config.Config
+- data.ai_conversation.AIConversation
+
+注意点:
+- API呼び出しの頻度制限に注意
+- APIキーの安全な管理（設定ファイルからの読み込み、暗号化など）
+- ネットワークエラーなどの例外処理を適切に行うこと
+"""
+src/core/character_state.py
+"""
+キャラクターの状態管理
+
+役割:
+- キャラクターの表情や姿勢の状態管理
+
+主な機能:
+- 現在の状態の保持と更新
+- 状態に応じた画像ファイル名の提供
+
+使用するクラス/モジュール:
+- utils.config.Config
+
+注意点:
+- 状態変更時にはシグナルを発行し、GUI更新を促すこと
+- 存在しない状態への変更要求があった場合の適切なエラーハンドリング
+"""
+src/core/notification_manager.py
+"""
+通知管理
+
+役割:
+- システム通知の送信管理
+
+主な機能:
+- タイマー完了時の通知
+- 重要なイベント（長時間の作業など）の通知
+
+使用するクラス/モジュール:
+- utils.config.Config
+
+注意点:
+- OSごとの通知システムの差異に対応すること
+- ユーザー設定に基づいて通知の on/off を切り替えられるようにすること
+"""
+src/data/database.py
+"""
+データベース操作
+
+役割:
+- SQLiteデータベースの初期化と操作
+主な機能:
+- テーブルの作成と管理
+- データの挿入、更新、削除、取得
+
+使用するクラス/モジュール:
+- sqlite3
+- utils.config.Config
+
+注意点:
+- SQLインジェクション攻撃を防ぐため、パラメータ化クエリを使用すること
+- 大量のデータを扱う場合はインデックスの適切な設定を行うこと
+- トランザクション処理を適切に行い、データの一貫性を保つこと
+"""
+src/data/data_analyzer.py
+"""
+データ分析とレポート生成
+
+役割:
+- 記録されたデータの分析
+- 生産性レポートの生成
+
+主な機能:
+- 作業パターンの分析（時間帯別、曜日別など）
+- タスク完了率の計算
+- 集中時間の統計
+
+使用するクラス/モジュール:
+- data.database.Database
+- pandas (データ処理用)
+- matplotlib (グラフ生成用)
+
+注意点:
+- 大量のデータを扱う場合のパフォーマンスに注意
+- ユーザーにとって意味のある指標を選択し、分かりやすい形で提示すること
+"""
+src/data/task_data.py
+"""
+タスクデータの構造と操作
+
+役割:
+- タスクデータの定義と管理
+
+主な機能:
+- タスクオブジェクトの定義（ID、タイトル、説明、状態、親タスクIDなど）
+- タスクデータのシリアライズ/デシリアライズ
+
+使用するクラス/モジュール:
+- dataclasses (Pythonの標準ライブラリ)
+
+注意点:
+- タスクの階層構造を効率的に表現できるデータ構造を選択すること
+- タスクの状態変更履歴を追跡できるようにすること
+"""
+src/data/ai_conversation.py
+"""
+AI会話履歴の管理
+
+役割:
+- AI（ChatGPT）との会話履歴の保存と管理
+
+主な機能:
+- 会話メッセージの保存
+- 会話コンテキストの維持
+- 過去の会話の検索
+
+使用するクラス/モジュール:
+- data.database.Database
+
+注意点:
+- 長期間の使用で会話履歴が肥大化しないよう、適切なデータ管理を行うこと
+- ユーザーのプライバシーに配慮し、必要に応じて会話履歴の削除機能を提供すること
+"""
+src/data/settings_manager.py
+"""
+アプリケーション設定の管理
+
+役割:
+- ユーザー設定の保存と読み込み
+
+主な機能:
+- 設定のシリアライズ/デシリアライズ
+- デフォルト設定の提供
+- 設定変更の通知
+
+使用するクラス/モジュール:
+- json (設定のシリアライズ用)
+- utils.config.Config
+
+注意点:
+- 設定ファイルの破損に備えて、バックアップと復元機能を実装すること
+- 機密情報（APIキーなど）は暗号化して保存すること
+"""
+src/utils/config.py
+"""
+設定管理
+
+役割:
+- アプリケーション全体の設定を一元管理
+
+主な機能:
+- 設定値の取得と設定
+- 設定変更の通知（Observer パターンの実装）
+
+使用するクラス/モジュール:
+- data.settings_manager.SettingsManager
+
+注意点:
+- スレッドセーフな実装を心がけること
+- 設定変更時は関連するモジュールに適切に通知すること
+"""
+src/utils/helpers.py
+"""
+ヘルパー関数
+
+役割:
+- アプリケーション全体で使用する汎用的な関数を提供
+
+主な機能:
+- 時間フォーマットの変換
+- データ処理ユーティリティ
+- 文字列操作ユーティリティ
+
+注意点:
+- パフォーマンスを考慮した実装を心がけること
+- 可能な限り、副作用のない純粋関数として実装すること
+"""
+src/utils/ui_helpers.py
+"""
+UI関連のヘルパー関数
+
+役割:
+- GUI開発に関する汎用的な関数を提供
+
+主な機能:
+- カスタムウィジェットの作成
+- アイコンやスタイルの適用
+- レイアウト調整ユーティリティ
+
+使用するクラス/モジュール:
+- PySide6.QtWidgets
+- PySide6.QtGui
+
+注意点:
+- PySide6の機能を最大限に活用し、効率的なUI実装を支援すること
+- 異なる環境（OS、画面サイズなど）での一貫した表示を保証すること
+"""
+src/utils/constants.py
+"""
+アプリケーション全体で使用する定数
+
+役割:
+- 共通の定数値を一元管理
+
+主な内容:
+- デフォルトの時間設定（作業時間、休憩時間など）
+- カラーコード
+- ファイルパス
+- エラーメッセージ
+
+注意点:
+- 定数名は明確で理解しやすいものを選ぶこと
+- 必要に応じて、列挙型（Enum）を使用して関連する定数をグループ化すること
+"""
+tests/test_timer.py, test_session_manager.py, test_task_manager.py, test_ai_interface.py, test_character_state.py
+"""
+各コアモジュールのユニットテスト
+
+役割:
+- 各モジュールの機能が正しく動作することを確認
+
+主な内容:
+- 正常系と異常系のテストケース
+- エッジケースの確認
+- モック（Mock）を使用した外部依存の分離
+
+使用するクラス/モジュール:
+- unittest
+- unittest.mock
+
+注意点:
+- テストカバレッジを高めること
+- テストの独立性を保つこと（テスト間の依存を避ける）
+- テストデータはテストケースごとに適切に準備し、テスト実行後はクリーンアップすること
+"""
+resources/styles/style.qss
+cssCopy"""
+アプリケーションのスタイル定義
+
+役割:
+- アプリケーション全体の視覚的なスタイルを定義
+- ウィジェットの外観をカスタマイズ
+
+主な内容:
+1. 全体的なテーマ設定
+   - 背景色、前景色の定義
+   - フォントファミリーとサイズの設定
+   - 共通の角丸やボーダーのスタイル
+
+2. メインウィンドウのスタイリング
+   - 背景色や境界線の設定
+   - レイアウトの余白や間隔の調整
+
+3. タイマーウィジェットのスタイル
+   - フォントサイズと色
+   - 背景色や枠線（状態に応じて変化）
+
+4. キャラクターウィジェット周りのスタイル
+   - 背景の透明度設定
+   - キャラクター画像の配置調整
+
+5. ダッシュボードウィジェットのスタイル
+   - 折りたたみ可能な領域のデザイン
+   - 情報表示部分のレイアウトとカラーリング
+
+6. スライドパネル（タスク管理、AI会話）のスタイル
+   - スライドインアニメーションの設定
+   - パネル内の各要素（リスト項目、入力欄など）のスタイル
+
+7. 各種ボタンのスタイル
+   - 通常状態、ホバー状態、押下状態でのデザイン変化
+   - アイコンとテキストの配置
+
+8. 設定ダイアログとレポートウィンドウのスタイル
+   - フォーム要素（入力欄、チェックボックスなど）のデザイン
+   - グラフや表の表示スタイル
+
+使用する主なセレクタ:
+- QMainWindow
+- QWidget
+- QPushButton
+- QLabel
+- QLineEdit
+- QTextEdit
+- QListView
+- QTreeView
+- QTabWidget
+- QDialog
+
+注意点:
+- レスポンシブデザインを意識し、異なる画面サイズでも崩れないよう注意する
+- アクセシビリティを考慮し、十分なコントラスト比を保つ
+- ダークモードとライトモードの両方に対応できるよう、変数を活用する
+- キャラクター画像との調和を意識しつつ、操作性を損なわないデザインにする
+- PySide6特有のスタイリング方法（例: QPropertyアニメーション）を適切に活用する
+
+サンプルコード:
+/* 全体のテーマ設定 */
+* {
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+}
+
+/* メインウィンドウ */
+QMainWindow {
+    background-color: #f0f0f0;
+}
+
+/* タイマーウィジェット */
+#timerWidget {
+    font-size: 48px;
+    color: #333333;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* ボタンのスタイル */
+QPushButton {
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 5px;
+    padding: 5px 10px;
+}
+
+QPushButton:hover {
+    background-color: #357abd;
+}
+
+QPushButton:pressed {
+    background-color: #2a5d8c;
+}
+
+/* スライドパネル */
+#slidePanel {
+    background-color: white;
+    border-left: 1px solid #cccccc;
+}
+
+/* キャラクターウィジェット用の透明背景 */
+#characterWidget {
+    background-color: transparent;
+}
+
+"""
