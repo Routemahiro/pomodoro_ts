@@ -1,0 +1,72 @@
+ポモドーロアプリ改訂版開発計画
+1. プロジェクト初期設定とユーティリティ
+
+ src/utils/config.py
+ src/utils/constants.py
+ src/utils/helpers.py
+ src/utils/ui_helpers.py
+ src/main.py (メインエントリーポイント)
+
+2. データ層の実装
+
+ src/data/database.py
+ src/data/task_data.py
+ src/data/ai_conversation.py
+ src/data/settings_manager.py
+ src/data/data_analyzer.py
+
+3. コア機能の実装
+
+ src/core/timer.py
+ src/core/session_manager.py
+ src/core/task_manager.py
+ src/core/ai_interface.py
+ src/core/character_state.py
+ src/core/notification_manager.py
+ src/core/activity_tracker.py
+
+4. GUI基本構造の実装
+
+ src/gui/main_window.py
+ src/gui/timer_widget.py
+ src/gui/character_widget.py
+ src/gui/dashboard_widget.py
+ src/gui/slide_panel.py
+ resources/styles/style.qss
+
+5. 追加GUI機能の実装
+
+ src/gui/task_panel.py
+ src/gui/ai_chat_panel.py
+ src/gui/settings_dialog.py
+ src/gui/report_window.py
+
+6. テストの実装
+
+ tests/test_timer.py
+ tests/test_session_manager.py
+ tests/test_task_manager.py
+ tests/test_ai_interface.py
+ tests/test_character_state.py
+ その他必要なテストファイル (データ層、GUI層など)
+
+7. 統合とリファクタリング
+
+ 各モジュール間の連携の確認
+ パフォーマンス最適化
+ コードレビューと品質チェック
+
+8. 最終テストと調整
+
+ 統合テストの実施
+ ユーザビリティテストの実施
+ バグ修正と最終調整
+
+注意点
+
+各ステップの実装後、対応するユニットテストを書く
+GUIコンポーネントの実装後は手動での動作確認を行う
+定期的にコードレビューを実施し、品質を保つ
+パフォーマンスとセキュリティの観点からも各実装をチェック
+アプリケーションの一貫性を保つため、src/main.pyでのモジュール統合に注意を払う
+データ分析とレポート機能は、他の主要機能が安定した後に実装する
