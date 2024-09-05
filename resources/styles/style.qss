@@ -9,3 +9,165 @@
 - gui/main_window.py: スタイルシートの適用
 - 他のすべてのGUIファイル: 個別のウィジェットスタイリング
 """
+
+/* 全体のテーマ設定 */
+* {
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+}
+
+/* メインウィンドウ */
+QMainWindow {
+    background-color: #f0f0f0;
+}
+
+/* タイマーウィジェット */
+#timerWidget {
+    font-size: 48px;
+    color: #333333;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    padding: 10px;
+}
+
+/* キャラクターウィジェット */
+#characterWidget {
+    background-color: transparent;
+}
+
+/* ダッシュボードウィジェット */
+#dashboardWidget {
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* スライドパネル */
+#slidePanel {
+    background-color: white;
+    border-left: 1px solid #cccccc;
+}
+
+/* ボタンのスタイル */
+QPushButton {
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 5px;
+    padding: 5px 10px;
+}
+
+QPushButton:hover {
+    background-color: #357abd;
+}
+
+QPushButton:pressed {
+    background-color: #2a5d8c;
+}
+
+/* 入力フィールド */
+QLineEdit, QTextEdit {
+    background-color: white;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+    padding: 3px;
+}
+
+/* リストビューとツリービュー */
+QListView, QTreeView {
+    background-color: white;
+    border: 1px solid #cccccc;
+    border-radius: 3px;
+}
+
+/* タブウィジェット */
+QTabWidget::pane {
+    border: 1px solid #cccccc;
+    background-color: white;
+}
+
+QTabBar::tab {
+    background-color: #e0e0e0;
+    border: 1px solid #cccccc;
+    padding: 5px 10px;
+}
+
+QTabBar::tab:selected {
+    background-color: white;
+}
+
+/* ダイアログ */
+QDialog {
+    background-color: #f5f5f5;
+}
+
+/* スクロールバー */
+QScrollBar:vertical {
+    border: none;
+    background-color: #f0f0f0;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #c0c0c0;
+    min-height: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+/* レスポンシブデザイン対応 */
+@media (max-width: 800px) {
+    :root {
+        --base-font-size: 12px;
+        --timer-font-size: 36px;
+    }
+}
+
+@media (min-width: 801px) {
+    :root {
+        --base-font-size: 14px;
+        --timer-font-size: 48px;
+    }
+}
+
+* {
+    font-size: var(--base-font-size);
+}
+
+#timerWidget {
+    font-size: var(--timer-font-size);
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --main-bg-color: #2c2c2c;
+        --text-color: #e0e0e0;
+        --button-bg-color: #5c5c5c;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --main-bg-color: #f0f0f0;
+        --text-color: #333333;
+        --button-bg-color: #4a90e2;
+    }
+}
+
+QMainWindow {
+    background-color: var(--main-bg-color);
+}
+
+QLabel {
+    color: var(--text-color);
+}
+
+QPushButton {
+    background-color: var(--button-bg-color);
+}
+
+/* ... 既存のコード ... */
