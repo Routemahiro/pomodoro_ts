@@ -94,3 +94,12 @@ class SessionManager:
         '''
         deleted_count = self.database.execute_update(query, (cutoff_date,))
         print(f"{deleted_count}件の古いセッションデータを削除しました。")
+
+    def get_today_stats(self):
+        # ここに今日の統計情報を取得するロジックを実装する
+        # 仮の実装として、ダミーデータを返す
+        return {
+            "completed_pomodoros": 0,
+            "total_focus_time": 0,
+            "completed_tasks": 0
+        }

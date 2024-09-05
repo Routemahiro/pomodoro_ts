@@ -24,8 +24,9 @@ from datetime import datetime
 from typing import List
 
 class TaskManager:
-    def __init__(self, database: Database):
+    def __init__(self, database: Database, config):  # configパラメータを追加
         self.database = database
+        self.config = config  # configを保存
         self.data_task_manager = DataTaskManager(database)
 
     def create_task(self, title: str, description: str = "", parent_id: int = None, priority: int = 0, due_date: datetime = None) -> int:
@@ -81,3 +82,7 @@ class TaskManager:
 
     def get_tasks_by_due_date(self) -> List[Task]:
         return sorted(self.get_all_tasks(), key=lambda t: t.due_date or datetime.max)
+
+    def get_completed_tasks_count(self) -> int:
+        completed_tasks = [task for task in self.get_all_tasks() if task.status == 'completed']
+        return len(completed_tasks)

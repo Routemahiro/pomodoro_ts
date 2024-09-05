@@ -30,7 +30,12 @@ class AIInterface:
     def __init__(self, config, ai_conversation_manager: AIConversationManager):
         self.config = config
         self.ai_conversation_manager = ai_conversation_manager
-        self.fernet = Fernet(self.config.get('encryption_key'))
+        encryption_key = self.config.get('encryption_key')
+        if encryption_key is None:
+            # キーがない場合は新しく生成
+            encryption_key = Fernet.generate_key().decode()
+            self.config.set('encryption_key', encryption_key)
+        self.fernet = Fernet(encryption_key.encode())
         self.encrypted_api_key = self.config.get('encrypted_openai_api_key')
         self.api_url = "https://api.openai.com/v1/chat/completions"
 

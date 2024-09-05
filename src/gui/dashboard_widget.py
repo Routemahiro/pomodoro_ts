@@ -38,12 +38,12 @@ class DashboardWidget(QWidget):
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
         
-        self.session_label = QLabel("Today's Sessions: 0")
-        self.task_label = QLabel("Completed Tasks: 0")
-        self.focus_time_label = QLabel("Total Focus Time: 0h 0m")
+        self.pomodoro_count_label = QLabel("完了したポモドーロ: 0")  # この行を追加
+        self.completed_tasks_label = QLabel("完了したタスク: 0")  # この行を修正
+        self.focus_time_label = QLabel("集中時間: 0分")  # この行を修正
 
-        self.content_layout.addWidget(self.session_label)
-        self.content_layout.addWidget(self.task_label)
+        self.content_layout.addWidget(self.pomodoro_count_label)  # この行を追加
+        self.content_layout.addWidget(self.completed_tasks_label)
         self.content_layout.addWidget(self.focus_time_label)
 
         layout.addWidget(self.content_widget)
@@ -59,13 +59,10 @@ class DashboardWidget(QWidget):
     def update_dashboard(self):
         today_stats = self.session_manager.get_today_stats()
         completed_tasks = self.task_manager.get_completed_tasks_count()
-        
-        self.session_label.setText(f"Today's Sessions: {today_stats['session_count']}")
-        self.task_label.setText(f"Completed Tasks: {completed_tasks}")
-        
-        focus_time_hours = today_stats['total_focus_time'] // 3600
-        focus_time_minutes = (today_stats['total_focus_time'] % 3600) // 60
-        self.focus_time_label.setText(f"Total Focus Time: {focus_time_hours}h {focus_time_minutes}m")
+
+        self.pomodoro_count_label.setText(f"完了したポモドーロ: {today_stats['completed_pomodoros']}")
+        self.focus_time_label.setText(f"集中時間: {today_stats['total_focus_time'] // 60} 分")
+        self.completed_tasks_label.setText(f"完了したタスク: {completed_tasks}")
 
     def showEvent(self, event):
         super().showEvent(event)

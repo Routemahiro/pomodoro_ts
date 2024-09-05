@@ -22,9 +22,13 @@
 
 import sys
 import os
+import traceback
 # プロジェクトのルートディレクトリをパスに追加
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
+
+import matplotlib
+matplotlib.use('QtAgg')
 
 from PySide6.QtWidgets import QApplication
 from src.gui.main_window import MainWindow
@@ -34,6 +38,8 @@ from src.core.task_manager import TaskManager
 from src.core.ai_interface import AIInterface
 from src.data.database import Database
 from src.utils.config import config
+from src.core.notification_manager import NotificationManager
+from src.data.ai_conversation import AIConversationManager  # この行を修正
 
 def main():
     app = QApplication(sys.argv)
@@ -46,10 +52,12 @@ def main():
     db.initialize()
 
     # 各コアモジュールの初期化
-    timer = Timer(config)
+    notification_manager = NotificationManager(config)
+    timer = Timer(config, notification_manager)
     session_manager = SessionManager(db, config)
     task_manager = TaskManager(db, config)
-    ai_interface = AIInterface(config)
+    ai_conversation_manager = AIConversationManager(db)  # AIConversationManagerの初期化を修正
+    ai_interface = AIInterface(config, ai_conversation_manager)  # AIInterfaceの初期化を修正
 
     # メインウィンドウの作成と表示
     main_window = MainWindow(timer, session_manager, task_manager, ai_interface, config)
@@ -63,4 +71,6 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print(f"予期せぬエラーが発生しました: {e}")
+        print("詳細:")
+        traceback.print_exc()
         sys.exit(1)

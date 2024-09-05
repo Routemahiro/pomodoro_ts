@@ -28,14 +28,16 @@ class SettingsManager:
 
     def _get_or_create_encryption_key(self):
         key_file = 'data/encryption_key.key'
-        if os.path.exists(key_file):
-            with open(key_file, 'rb') as f:
-                return f.read()
-        else:
+        if not os.path.exists('data'):
+            os.makedirs('data')
+        if not os.path.exists(key_file):
             key = Fernet.generate_key()
             with open(key_file, 'wb') as f:
                 f.write(key)
-            return key
+        else:
+            with open(key_file, 'rb') as f:
+                key = f.read()
+        return key
 
     def load(self) -> Dict[str, Any]:
         if os.path.exists(self.settings_file):

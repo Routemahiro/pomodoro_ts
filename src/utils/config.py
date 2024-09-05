@@ -14,6 +14,7 @@
 """
 from typing import Any, Callable
 import threading
+from cryptography.fernet import Fernet
 
 class Config:
     _instance = None
@@ -62,5 +63,9 @@ class Config:
         from src.data.settings_manager import SettingsManager
         settings_manager = SettingsManager()
         settings_manager.save(self._settings)
+
+    DEFAULT_CONFIG = {
+        'encryption_key': Fernet.generate_key().decode(),
+    }
 
 config = Config()

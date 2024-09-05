@@ -46,7 +46,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.timer = timer
         self.session_manager = session_manager
-        self.task_manager = task_manager
+        self.task_manager = task_manager  # この行を追加
         self.ai_interface = ai_interface
         self.config = config
 
@@ -95,7 +95,7 @@ class MainWindow(QMainWindow):
 
         self.slide_panel = SlidePanel(self)
         self.task_panel = TaskPanel(self.task_manager)
-        self.ai_chat_panel = AIChatPanel(self.ai_interface)
+        self.ai_chat_panel = AIChatPanel(self.ai_interface, self.task_manager)  # task_managerを追加
         self.slide_panel.add_panel("Tasks", self.task_panel)
         self.slide_panel.add_panel("AI Chat", self.ai_chat_panel)
 
@@ -113,8 +113,16 @@ class MainWindow(QMainWindow):
         pass
 
     def apply_stylesheet(self):
-        stylesheet = load_stylesheet("resources/styles/style.qss")
-        self.setStyleSheet(stylesheet)
+        try:
+            stylesheet = load_stylesheet("resources/styles/style.qss")
+            if stylesheet:
+                self.setStyleSheet(stylesheet)
+            else:
+                print("警告: スタイルシートが空です。")
+        except FileNotFoundError:
+            print("警告: スタイルシートファイルが見つかりません。")
+        except Exception as e:
+            print(f"スタイルシートの読み込み中にエラーが発生しました: {e}")
 
     def show_settings_dialog(self):
         dialog = SettingsDialog(self.config, self)
