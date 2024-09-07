@@ -1,13 +1,14 @@
-/* このファイルは、アプリケーションのスタイルを定義します。
-   主な役割:
-   - ウィジェットのスタイル定義
-   - カラーテーマの設定
-   - フォントスタイルの設定
+"""
+このファイルは、アプリケーションのスタイルを定義します。
+主な役割:
+- ウィジェットのスタイル定義
+- カラーテーマの設定
+- フォントスタイルの設定
 
-   連携するファイル:
-   - gui/main_window.py: スタイルシートの適用
-   - 他のすべてのGUIファイル: 個別のウィジェットスタイリング
-*/
+連携するファイル:
+- gui/main_window.py: スタイルシートの適用
+- 他のすべてのGUIファイル: 個別のウィジェットスタイリング
+"""
 
 /* 全体のテーマ設定 */
 * {
@@ -117,7 +118,55 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0px;
 }
 
-/* ラベル */
-QLabel {
-    color: #333333;
+/* レスポンシブデザイン対応 */
+@media (max-width: 800px) {
+    :root {
+        --base-font-size: 12px;
+        --timer-font-size: 36px;
+    }
 }
+
+@media (min-width: 801px) {
+    :root {
+        --base-font-size: 14px;
+        --timer-font-size: 48px;
+    }
+}
+
+* {
+    font-size: var(--base-font-size);
+}
+
+#timerWidget {
+    font-size: var(--timer-font-size);
+}
+
+/* ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --main-bg-color: #2c2c2c;
+        --text-color: #e0e0e0;
+        --button-bg-color: #5c5c5c;
+    }
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --main-bg-color: #f0f0f0;
+        --text-color: #333333;
+        --button-bg-color: #4a90e2;
+    }
+}
+
+QMainWindow {
+    background-color: var(--main-bg-color);
+}
+
+QLabel {
+    color: var(--text-color);
+}
+QPushButton {
+    background-color: var(--button-bg-color);
+}
+
+/* ... 既存のコード ... */
