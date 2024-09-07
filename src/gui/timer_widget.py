@@ -7,19 +7,19 @@
 
 主な機能:
 - デジタル時計形式でのタイマー表示
+- 円形進捗バーでの視覚的なタイマー表示
 - タイマーの状態に応じた表示色の変更（作業中、休憩中など）
 
 使用するクラス/モジュール:
 - core.timer.Timer
 - utils.ui_helpers
-
-注意点:
-- タイマーの状態変更時にシグナルを発行し、他のウィジェット（特にCharacterWidget）に通知すること
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QRectF
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QPalette
 from src.utils.helpers import format_time
+from src.core.timer import TimerType
 
 class TimerWidget(QWidget):
     timer_updated = Signal(str, str, int)  # 状態, タイマータイプ, 残り時間
@@ -27,26 +27,67 @@ class TimerWidget(QWidget):
     def __init__(self, timer):
         super().__init__()
         self.timer = timer
+        self.progress = 0
         self.setup_ui()
         self.timer.add_observer(self.update_timer)
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        self.time_label = QLabel("25:00")
+        self.time_label = QLabel(format_time(self.timer.remaining_time))
         self.time_label.setAlignment(Qt.AlignCenter)
         self.time_label.setObjectName("timerWidget")
+        
+        # ラベルの背景を透明にする
+        palette = self.time_label.palette()
+        palette.setColor(QPalette.Window, Qt.transparent)
+        self.time_label.setPalette(palette)
+        self.time_label.setAutoFillBackground(True)
+        
         layout.addWidget(self.time_label)
+
+        self.setFixedSize(200, 200)  # ウィジェットのサイズを固定
+        
+        # ウィジェット自体の背景も透明にする
+        self.setAttribute(Qt.WA_TranslucentBackground)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # 背景色を円形に描画
+        background_color = QColor(240, 240, 240)  # 薄いグレー
+        painter.setBrush(QBrush(background_color))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(self.rect().adjusted(5, 5, -5, -5))
+
+        # 円形進捗バーの描画
+        pen_width = 10
+        painter.setPen(QPen(QColor(200, 200, 200), pen_width))
+        painter.drawArc(QRectF(pen_width, pen_width, self.width() - 2*pen_width, self.height() - 2*pen_width), 0, 360 * 16)
+
+        painter.setPen(QPen(self.get_color(), pen_width))
+        painter.drawArc(QRectF(pen_width, pen_width, self.width() - 2*pen_width, self.height() - 2*pen_width), 90 * 16, -self.progress * 360 * 16)
 
     def update_timer(self, state, timer_type, remaining_time):
         formatted_time = format_time(remaining_time)
         self.time_label.setText(formatted_time)
-        self.update_color(timer_type)
+        total_duration = self.get_total_duration(timer_type)
+        self.progress = 1 - (remaining_time / total_duration)
+        self.update()
         self.timer_updated.emit(state.name, timer_type.name, remaining_time)
 
-    def update_color(self, timer_type):
-        if timer_type.name == "WORK":
-            self.time_label.setStyleSheet("color: #4CAF50;")  # 緑色
-        elif timer_type.name == "SHORT_BREAK":
-            self.time_label.setStyleSheet("color: #2196F3;")  # 青色
+    def get_total_duration(self, timer_type):
+        if timer_type == TimerType.WORK:
+            return self.timer.config.get('work_time', 25 * 60)
+        elif timer_type == TimerType.SHORT_BREAK:
+            return self.timer.config.get('short_break', 5 * 60)
         else:  # LONG_BREAK
-            self.time_label.setStyleSheet("color: #FFC107;")  # 黄色
+            return self.timer.config.get('long_break', 15 * 60)
+
+    def get_color(self):
+        if self.timer.timer_type == TimerType.WORK:
+            return QColor("#4CAF50")  # 緑色
+        elif self.timer.timer_type == TimerType.SHORT_BREAK:
+            return QColor("#2196F3")  # 青色
+        else:  # LONG_BREAK
+            return QColor("#FFC107")  # 黄色

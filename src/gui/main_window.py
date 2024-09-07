@@ -29,8 +29,8 @@
 - キャラクターウィジェットが他の要素と重ならないよう、適切なz-indexを設定すること
 """
 
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame
+from PySide6.QtCore import Qt, QSize
 from src.gui.timer_widget import TimerWidget
 from src.gui.character_widget import CharacterWidget
 from src.gui.dashboard_widget import DashboardWidget
@@ -62,37 +62,62 @@ class MainWindow(QMainWindow):
         self.apply_stylesheet()
 
     def setup_ui(self):
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.main_layout = QHBoxLayout(self.central_widget)
+
+        # 左側のレイアウト
         left_layout = QVBoxLayout()
+        
+        # タイマーと円形進捗バー
+        timer_layout = QVBoxLayout()
         self.timer_widget = TimerWidget(self.timer)
-        self.dashboard_widget = DashboardWidget(self.session_manager, self.task_manager)
-        left_layout.addWidget(self.timer_widget)
-        left_layout.addWidget(self.dashboard_widget)
+        timer_layout.addWidget(self.timer_widget, alignment=Qt.AlignCenter)
+        timer_layout.setContentsMargins(0, 0, 0, 0)  # マージンを0に設定
+        
+        # Startとリセットボタン
+        timer_buttons = QHBoxLayout()
+        self.start_button = create_button("Start", style_class="primary")
+        self.reset_button = create_button("Reset", style_class="secondary")
+        timer_buttons.addWidget(self.start_button)
+        timer_buttons.addWidget(self.reset_button)
+        timer_layout.addLayout(timer_buttons)
+        
+        left_layout.addLayout(timer_layout)
+
+        # キャラクター表示エリア
+        self.character_widget = CharacterWidget(self.config)
+        self.character_widget.setFixedSize(QSize(400, 600))
+        left_layout.addWidget(self.character_widget, alignment=Qt.AlignCenter)
+
         left_layout.addStretch(1)
 
-        self.character_widget = CharacterWidget(self.config)
-        self.character_widget.setAlignment(Qt.AlignCenter)
-
+        # 右側のレイアウト
         right_layout = QVBoxLayout()
-        button_layout = QHBoxLayout()
-        self.start_button = create_button("Start Timer", style_class="primary")
-        self.reset_button = create_button("Reset Timer", style_class="secondary")
+
+        # TasksとAI Chatボタン
+        top_buttons = QHBoxLayout()
         self.tasks_button = create_button("Tasks", style_class="secondary")
         self.ai_chat_button = create_button("AI Chat", style_class="secondary")
-        self.settings_button = create_button("Settings", style_class="secondary")
-        
-        button_layout.addWidget(self.start_button)
-        button_layout.addWidget(self.reset_button)
-        button_layout.addWidget(self.tasks_button)
-        button_layout.addWidget(self.ai_chat_button)
-        button_layout.addWidget(self.settings_button)
+        top_buttons.addWidget(self.tasks_button)
+        top_buttons.addWidget(self.ai_chat_button)
+        right_layout.addLayout(top_buttons)
+
+        # ダッシュボード
+        self.dashboard_widget = DashboardWidget(self.session_manager, self.task_manager)
+        right_layout.addWidget(self.dashboard_widget)
 
         right_layout.addStretch(1)
-        right_layout.addLayout(button_layout)
 
-        self.main_layout.addLayout(left_layout)
-        self.main_layout.addWidget(self.character_widget)
-        self.main_layout.addLayout(right_layout)
+        # 設定ボタン
+        self.settings_button = create_button("Settings", style_class="secondary")
+        right_layout.addWidget(self.settings_button, alignment=Qt.AlignRight | Qt.AlignBottom)
 
+        # メインレイアウトに追加
+        self.main_layout.addLayout(left_layout, 2)
+        self.main_layout.addLayout(right_layout, 1)
+
+        # スライドパネル
         self.slide_panel = SlidePanel(self)
         self.task_panel = TaskPanel(self.task_manager)
         self.ai_chat_panel = AIChatPanel(self.ai_interface, self.task_manager)  # task_managerを追加
@@ -134,5 +159,7 @@ class MainWindow(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        # レスポンシブデザインの調整
-        self.character_widget.adjust_size(self.size())
+        # キャラクターウィジェットのサイズ調整
+        available_height = self.height() - self.timer_widget.height() - 20  # 20はマージン
+        character_height = min(600, available_height)
+        self.character_widget.setFixedSize(QSize(400, character_height))
