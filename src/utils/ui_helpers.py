@@ -25,12 +25,13 @@ import os
 def load_stylesheet(path: str) -> str:
     """指定されたパスからスタイルシートを読み込む"""
     try:
-        with open(path, 'r', encoding='utf-8') as file:
-            return file.read()
-    except UnicodeDecodeError:
-        # UTF-8で読み込めない場合は、cp932で試してみる
-        with open(path, 'r', encoding='cp932') as file:
-            return file.read()
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        print(f"警告: スタイルシートファイル '{path}' が見つかりません。")
+    except Exception as e:
+        print(f"スタイルシートの読み込み中にエラーが発生しました: {e}")
+    return ""
 
 def create_button(text: str, icon_path: str = None, style_class: str = None) -> QPushButton:
     """カスタムボタンを作成する"""
