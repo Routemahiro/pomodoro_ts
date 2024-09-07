@@ -30,6 +30,7 @@ class TimerWidget(QWidget):
         self.progress = 0
         self.setup_ui()
         self.timer.add_observer(self.update_timer)
+        self.setFixedSize(200, 200)  # ウィジェットのサイズを固定
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -44,8 +45,6 @@ class TimerWidget(QWidget):
         self.time_label.setAutoFillBackground(True)
         
         layout.addWidget(self.time_label)
-
-        self.setFixedSize(200, 200)  # ウィジェットのサイズを固定
         
         # ウィジェット自体の背景も透明にする
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -54,19 +53,16 @@ class TimerWidget(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        # 背景色を円形に描画
-        background_color = QColor(240, 240, 240)  # 薄いグレー
-        painter.setBrush(QBrush(background_color))
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(self.rect().adjusted(5, 5, -5, -5))
-
         # 円形進捗バーの描画
         pen_width = 10
+        size = min(self.width(), self.height()) - pen_width
+        rect = QRectF((self.width() - size) / 2, (self.height() - size) / 2, size, size)
+
         painter.setPen(QPen(QColor(200, 200, 200), pen_width))
-        painter.drawArc(QRectF(pen_width, pen_width, self.width() - 2*pen_width, self.height() - 2*pen_width), 0, 360 * 16)
+        painter.drawArc(rect, 0, 360 * 16)
 
         painter.setPen(QPen(self.get_color(), pen_width))
-        painter.drawArc(QRectF(pen_width, pen_width, self.width() - 2*pen_width, self.height() - 2*pen_width), 90 * 16, -self.progress * 360 * 16)
+        painter.drawArc(rect, 90 * 16, -self.progress * 360 * 16)
 
     def update_timer(self, state, timer_type, remaining_time):
         formatted_time = format_time(remaining_time)

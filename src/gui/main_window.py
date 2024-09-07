@@ -46,34 +46,33 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.timer = timer
         self.session_manager = session_manager
-        self.task_manager = task_manager  # この行を追加
+        self.task_manager = task_manager
         self.ai_interface = ai_interface
         self.config = config
 
-        self.setWindowTitle("Pomodoro AI Assistant")
-        self.setGeometry(100, 100, 800, 600)
-
         self.central_widget = QWidget()
+        self.central_widget.setAttribute(Qt.WA_TranslucentBackground)
         self.setCentralWidget(self.central_widget)
         self.main_layout = QHBoxLayout(self.central_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.setWindowTitle("Pomodoro AI Assistant")
+        self.setGeometry(100, 100, 800, 600)
 
         self.setup_ui()
         self.setup_shortcuts()
         self.apply_stylesheet()
 
     def setup_ui(self):
-        self.central_widget = QWidget()
-        self.setCentralWidget(self.central_widget)
-        self.main_layout = QHBoxLayout(self.central_widget)
-
         # 左側のレイアウト
         left_layout = QVBoxLayout()
+        left_layout.setContentsMargins(0, 0, 0, 0)
         
         # タイマーと円形進捗バー
         timer_layout = QVBoxLayout()
+        timer_layout.setContentsMargins(0, 0, 0, 0)
         self.timer_widget = TimerWidget(self.timer)
         timer_layout.addWidget(self.timer_widget, alignment=Qt.AlignCenter)
-        timer_layout.setContentsMargins(0, 0, 0, 0)  # マージンを0に設定
         
         # Startとリセットボタン
         timer_buttons = QHBoxLayout()
