@@ -113,3 +113,9 @@ class Timer:
     def _notify_observers(self):
         for observer in self.observers:
             observer(self.state, self.timer_type, self.remaining_time)
+
+    def update_settings(self, config):
+        self.work_time = config.get('work_time')
+        self.short_break = config.get('short_break')
+        self.long_break = config.get('long_break')
+        # タイマーの表示を更新する処理を追加

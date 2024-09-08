@@ -36,6 +36,7 @@ class Config:
 
     def set(self, key: str, value: Any):
         self._settings[key] = value
+        self.save()  # 設定を変更したら即座に保存
         self._notify_observers(key, value)
 
     def register_observer(self, key: str, callback: Callable[[str, Any], None]):

@@ -40,12 +40,25 @@ from src.data.database import Database
 from src.utils.config import config
 from src.core.notification_manager import NotificationManager
 from src.data.ai_conversation import AIConversationManager  # この行を修正
+from src.utils.ui_helpers import load_stylesheet
 
 def main():
     app = QApplication(sys.argv)
 
     # 設定の初期化
     config.load()
+
+    # テーマの適用
+    theme = config.get('theme', 'ライト')
+    if theme == 'ダーク':
+        stylesheet = load_stylesheet("resources/styles/dark_style.qss")
+    else:
+        stylesheet = load_stylesheet("resources/styles/style.qss")
+    
+    if stylesheet:
+        app.setStyleSheet(stylesheet)
+    else:
+        print(f"警告: {theme}モードのスタイルシートが空です。")
 
     # データベースの初期化
     db = Database(config)
@@ -56,8 +69,8 @@ def main():
     timer = Timer(config, notification_manager)
     session_manager = SessionManager(db, config)
     task_manager = TaskManager(db, config)
-    ai_conversation_manager = AIConversationManager(db)  # AIConversationManagerの初期化を修正
-    ai_interface = AIInterface(config, ai_conversation_manager)  # AIInterfaceの初期化を修正
+    ai_conversation_manager = AIConversationManager(db)
+    ai_interface = AIInterface(config, ai_conversation_manager)
 
     # メインウィンドウの作成と表示
     main_window = MainWindow(timer, session_manager, task_manager, ai_interface, config)

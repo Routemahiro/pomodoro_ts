@@ -1,0 +1,104 @@
+/* ダークモードのスタイル定義 */
+
+* {
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+}
+
+QMainWindow {
+    background-color: #2c2c2c;
+}
+
+#timerWidget {
+    font-size: 48px;
+    color: #ffffff;
+    background-color: transparent;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+#characterWidget {
+    background-color: transparent;
+}
+
+#dashboardWidget {
+    background-color: #3c3c3c;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+#slidePanel {
+    background-color: #2c2c2c;
+    border-left: 1px solid #4c4c4c;
+}
+
+QPushButton {
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 5px;
+    padding: 5px 10px;
+}
+
+QPushButton:hover {
+    background-color: #357abd;
+}
+
+QPushButton:pressed {
+    background-color: #2a5d8c;
+}
+
+QLineEdit, QTextEdit {
+    background-color: #3c3c3c;
+    border: 1px solid #4c4c4c;
+    border-radius: 3px;
+    padding: 3px;
+    color: #ffffff;
+}
+
+QListView, QTreeView {
+    background-color: #3c3c3c;
+    border: 1px solid #4c4c4c;
+    border-radius: 3px;
+    color: #ffffff;
+}
+
+QTabWidget::pane {
+    border: 1px solid #4c4c4c;
+    background-color: #2c2c2c;
+}
+
+QTabBar::tab {
+    background-color: #3c3c3c;
+    border: 1px solid #4c4c4c;
+    padding: 5px 10px;
+    color: #ffffff;
+}
+
+QTabBar::tab:selected {
+    background-color: #2c2c2c;
+}
+
+QDialog {
+    background-color: #2c2c2c;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background-color: #3c3c3c;
+    width: 10px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #4c4c4c;
+    min-height: 20px;
+    border-radius: 5px;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+
+QLabel {
+    color: #ffffff;
+}

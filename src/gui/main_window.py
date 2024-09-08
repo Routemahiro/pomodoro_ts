@@ -61,7 +61,60 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.setup_shortcuts()
-        self.apply_stylesheet()
+        self.setup_config_observers()
+        self.apply_theme()  # テーマを適用
+
+    # apply_stylesheetメソッドを削除
+
+    def apply_theme(self):
+        theme = self.config.get('theme', 'ライト')
+        self.update_theme('theme', theme)
+
+    def update_theme(self, key, value):
+        try:
+            if value == "ダーク":
+                stylesheet = load_stylesheet("resources/styles/dark_style.qss")
+            else:
+                stylesheet = load_stylesheet("resources/styles/style.qss")
+            
+            if stylesheet:
+                self.setStyleSheet(stylesheet)
+                # 子ウィジェットにもスタイルシートを適用
+                for child in self.findChildren(QWidget):
+                    child.setStyleSheet(stylesheet)
+            else:
+                print(f"警告: {value}モードのスタイルシートが空です。")
+        except FileNotFoundError:
+            print(f"警告: {value}モードのスタイルシートファイルが見つかりません。")
+        except Exception as e:
+            print(f"スタイルシートの読み込み中にエラーが発生しました: {e}")
+
+    def show_settings_dialog(self):
+        dialog = SettingsDialog(self.config, self)
+        if dialog.exec():
+            # 設定が変更された場合、必要に応じて追加の処理を行う
+            pass
+
+    def show_report_window(self):
+        report_window = ReportWindow(self.session_manager, self.task_manager, self)
+        report_window.show()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        # キャラクターウィジェットのサイズ調整
+        available_height = self.height() - self.timer_widget.height() - 20  # 20はマージン
+        character_height = min(600, available_height)
+        self.character_widget.setFixedSize(QSize(400, character_height))
+
+    def setup_config_observers(self):
+        self.config.register_observer('work_time', self.update_timer_settings)
+        self.config.register_observer('short_break', self.update_timer_settings)
+        self.config.register_observer('long_break', self.update_timer_settings)
+        self.config.register_observer('theme', self.update_theme)
+        # 他の設定項目も必要に応じて追加
+
+    def update_timer_settings(self, key, value):
+        self.timer.update_settings(self.config)
 
     def setup_ui(self):
         # 左側のレイアウト
@@ -135,30 +188,3 @@ class MainWindow(QMainWindow):
     def setup_shortcuts(self):
         # キーボードショートカットの設定
         pass
-
-    def apply_stylesheet(self):
-        try:
-            stylesheet = load_stylesheet("resources/styles/style.qss")
-            if stylesheet:
-                self.setStyleSheet(stylesheet)
-            else:
-                print("警告: スタイルシートが空です。")
-        except FileNotFoundError:
-            print("警告: スタイルシートファイルが見つかりません。")
-        except Exception as e:
-            print(f"スタイルシートの読み込み中にエラーが発生しました: {e}")
-
-    def show_settings_dialog(self):
-        dialog = SettingsDialog(self.config, self)
-        dialog.exec()
-
-    def show_report_window(self):
-        report_window = ReportWindow(self.session_manager, self.task_manager, self)
-        report_window.show()
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        # キャラクターウィジェットのサイズ調整
-        available_height = self.height() - self.timer_widget.height() - 20  # 20はマージン
-        character_height = min(600, available_height)
-        self.character_widget.setFixedSize(QSize(400, character_height))
