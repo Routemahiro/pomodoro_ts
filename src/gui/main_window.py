@@ -40,6 +40,7 @@ from src.gui.ai_chat_panel import AIChatPanel
 from src.gui.settings_dialog import SettingsDialog
 from src.gui.report_window import ReportWindow
 from src.utils.ui_helpers import create_button, load_stylesheet
+from src.core.timer import TimerState  # この行を追加
 
 class MainWindow(QMainWindow):
     def __init__(self, timer, session_manager, task_manager, ai_interface, config):
@@ -129,9 +130,9 @@ class MainWindow(QMainWindow):
         
         # Startとリセットボタン
         timer_buttons = QHBoxLayout()
-        self.start_button = create_button("Start", style_class="primary")
+        self.start_pause_button = create_button("Start", style_class="primary")
         self.reset_button = create_button("Reset", style_class="secondary")
-        timer_buttons.addWidget(self.start_button)
+        timer_buttons.addWidget(self.start_pause_button)
         timer_buttons.addWidget(self.reset_button)
         timer_layout.addLayout(timer_buttons)
         
@@ -179,11 +180,26 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
     def connect_signals(self):
-        self.start_button.clicked.connect(self.timer.start)
+        self.start_pause_button.clicked.connect(self.toggle_timer)
         self.reset_button.clicked.connect(self.timer.stop)
         self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
         self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
         self.settings_button.clicked.connect(self.show_settings_dialog)
+
+    def toggle_timer(self):
+        if self.timer.state == TimerState.RUNNING:
+            if self.timer.paused:
+                self.timer.resume()
+                self.start_pause_button.setText("Pause")
+            else:
+                self.timer.pause()
+                self.start_pause_button.setText("Resume")
+        else:
+            self.timer.start()
+            self.start_pause_button.setText("Pause")
+
+    def update_ui_on_timer_stop(self):
+        self.start_pause_button.setText("Start")
 
     def setup_shortcuts(self):
         # キーボードショートカットの設定

@@ -45,22 +45,30 @@ class Timer:
         self.pomodoro_count = 0
         self.timer_thread = None
         self.observers = []
+        self.paused = False
+        self.paused_time = 0
+        self.start_time = 0  # この行を追加
 
     def start(self):
         if self.state != TimerState.RUNNING:
             self.state = TimerState.RUNNING
+            self.start_time = time.time()  # この行を追加
             self.timer_thread = threading.Thread(target=self._run_timer)
             self.timer_thread.start()
             self._notify_observers()
 
     def pause(self):
-        if self.state == TimerState.RUNNING:
-            self.state = TimerState.PAUSED
+        if self.state == TimerState.RUNNING and not self.paused:
+            self.state = TimerState.PAUSED  # この行を追加
+            self.paused = True
+            self.paused_time = time.time() - self.start_time
             self._notify_observers()
 
     def resume(self):
-        if self.state == TimerState.PAUSED:
-            self.state = TimerState.RUNNING
+        if self.state == TimerState.PAUSED:  # この行を変更
+            self.state = TimerState.RUNNING  # この行を追加
+            self.start_time = time.time() - self.paused_time
+            self.paused = False
             self._notify_observers()
 
     def stop(self):
@@ -119,3 +127,6 @@ class Timer:
         self.short_break = config.get('short_break')
         self.long_break = config.get('long_break')
         # タイマーの表示を更新する処理を追加
+
+    def is_running(self):
+        return self.state == TimerState.RUNNING and not self.paused
