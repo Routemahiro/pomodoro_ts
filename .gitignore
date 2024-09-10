@@ -1,4 +1,4 @@
 *.pyc
 *.bat
+*.settings.json
 すべてのファイルの要件をまとめてある.txt
-*settings.json
