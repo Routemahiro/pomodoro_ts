@@ -10,6 +10,7 @@
 
 使用するクラス/モジュール:
 - utils.config.Config
+- winotify
 
 注意点:
 - OSはWindowsのみ対応
@@ -17,25 +18,24 @@
 """
 
 from src.utils.config import config
-from win10toast import ToastNotifier
+from winotify import Notification, audio
 import threading
 
 class NotificationManager:
     def __init__(self, config):
         self.config = config
-        self.toaster = ToastNotifier()
 
     def send_notification(self, title: str, message: str):
         if self.config.get('notifications_enabled', True):
             threading.Thread(target=self._show_notification, args=(title, message)).start()
 
     def _show_notification(self, title: str, message: str):
-        self.toaster.show_toast(
-            title,
-            message,
-            duration=5,
-            threaded=True
-        )
+        toast = Notification(app_id="ポモドーロタイマー",
+                             title=title,
+                             msg=message,
+                             duration="short")
+        toast.set_audio(audio.Default, loop=False)
+        toast.show()
 
     def notify_timer_complete(self, timer_type: str):
         title = "タイマー終了"
