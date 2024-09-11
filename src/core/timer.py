@@ -48,6 +48,7 @@ class Timer:
         self.paused = False
         self.start_time = 0
         self.last_update_time = 0  # 新しく追加
+        self.can_reset = False  # リセットボタンの状態を管理する新しい変数
 
     def start(self):
         if self.state != TimerState.RUNNING:
@@ -66,6 +67,7 @@ class Timer:
             self.paused = True
             self.paused_time = current_time - self.start_time
             self.state = TimerState.PAUSED
+            self.can_reset = True  # 一時停止状態でリセット可能に
             self._notify_observers()
 
     def resume(self):
@@ -74,12 +76,15 @@ class Timer:
             self.start_time = time.time() - self.paused_time
             self.last_update_time = time.time()  # 更新
             self.state = TimerState.RUNNING
+            self.can_reset = False  # 再開時にリセット不可に
             self._notify_observers()
 
     def stop(self):
-        if self.state != TimerState.IDLE:
+        if self.state != TimerState.IDLE and self.can_reset:
             self.state = TimerState.IDLE
+            self.timer_type = TimerType.WORK  # 常に作業セッションに戻る
             self.remaining_time = self.config.get('work_time', 25 * 60)
+            self.can_reset = False
             self._notify_observers()
 
     def _run_timer(self):
@@ -130,7 +135,7 @@ class Timer:
 
     def _notify_observers(self):
         for observer in self.observers:
-            observer(self.state, self.timer_type, self.remaining_time)
+            observer(self.state, self.timer_type, self.remaining_time, self.can_reset)
 
     def update_settings(self, config):
         self.work_time = config.get('work_time')

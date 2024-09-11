@@ -132,6 +132,7 @@ class MainWindow(QMainWindow):
         timer_buttons = QHBoxLayout()
         self.start_pause_button = create_button("Start", style_class="primary")
         self.reset_button = create_button("Reset", style_class="secondary")
+        self.reset_button.setEnabled(False)  # 初期状態では無効化
         timer_buttons.addWidget(self.start_pause_button)
         timer_buttons.addWidget(self.reset_button)
         timer_layout.addLayout(timer_buttons)
@@ -182,6 +183,7 @@ class MainWindow(QMainWindow):
     def connect_signals(self):
         self.start_pause_button.clicked.connect(self.toggle_timer)
         self.reset_button.clicked.connect(self.timer.stop)
+        self.timer_widget.timer_updated.connect(self.update_ui_on_timer_update)
         self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
         self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
         self.settings_button.clicked.connect(self.show_settings_dialog)
@@ -196,6 +198,17 @@ class MainWindow(QMainWindow):
         else:  # IDLE状態
             self.timer.start()
             self.start_pause_button.setText("Pause")
+
+    def update_ui_on_timer_update(self, state, timer_type, remaining_time, can_reset):
+        if state == TimerState.PAUSED.name:
+            self.start_pause_button.setText("Resume")
+            self.reset_button.setEnabled(can_reset)
+        elif state == TimerState.RUNNING.name:
+            self.start_pause_button.setText("Pause")
+            self.reset_button.setEnabled(False)
+        elif state == TimerState.IDLE.name:
+            self.start_pause_button.setText("Start")
+            self.reset_button.setEnabled(False)
 
     def update_ui_on_timer_stop(self):
         self.start_pause_button.setText("Start")

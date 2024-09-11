@@ -22,7 +22,7 @@ from src.utils.helpers import format_time
 from src.core.timer import TimerType
 
 class TimerWidget(QWidget):
-    timer_updated = Signal(str, str, int)  # 状態, タイマータイプ, 残り時間
+    timer_updated = Signal(str, str, int, bool)  # 状態, タイマータイプ, 残り時間, リセット可能か
 
     def __init__(self, timer):
         super().__init__()
@@ -64,13 +64,13 @@ class TimerWidget(QWidget):
         painter.setPen(QPen(self.get_color(), pen_width))
         painter.drawArc(rect, 90 * 16, -self.progress * 360 * 16)
 
-    def update_timer(self, state, timer_type, remaining_time):
+    def update_timer(self, state, timer_type, remaining_time, can_reset):
         formatted_time = format_time(remaining_time)
         self.time_label.setText(formatted_time)
         total_duration = self.get_total_duration(timer_type)
         self.progress = 1 - (remaining_time / total_duration)
         self.update()
-        self.timer_updated.emit(state.name, timer_type.name, remaining_time)
+        self.timer_updated.emit(state.name, timer_type.name, remaining_time, can_reset)
 
     def get_total_duration(self, timer_type):
         if timer_type == TimerType.WORK:
