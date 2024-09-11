@@ -46,21 +46,25 @@ class Timer:
         self.timer_thread = None
         self.observers = []
         self.paused = False
-        self.paused_time = 0
-        self.start_time = 0  # この行を追加
+        self.start_time = 0
+        self.last_update_time = 0  # 新しく追加
 
     def start(self):
         if self.state != TimerState.RUNNING:
             self.state = TimerState.RUNNING
-            self.start_time = time.time()  # この行を追加
+            self.start_time = time.time()
+            self.last_update_time = self.start_time  # 初期化
             self.timer_thread = threading.Thread(target=self._run_timer)
             self.timer_thread.start()
             self._notify_observers()
 
     def pause(self):
         if self.state == TimerState.RUNNING and not self.paused:
+            current_time = time.time()
+            elapsed_time = current_time - self.last_update_time
+            self.remaining_time -= elapsed_time  # 残り時間を正確に計算
             self.paused = True
-            self.paused_time = time.time() - self.start_time
+            self.paused_time = current_time - self.start_time
             self.state = TimerState.PAUSED
             self._notify_observers()
 
@@ -68,6 +72,7 @@ class Timer:
         if self.state == TimerState.PAUSED:
             self.paused = False
             self.start_time = time.time() - self.paused_time
+            self.last_update_time = time.time()  # 更新
             self.state = TimerState.RUNNING
             self._notify_observers()
 
@@ -80,13 +85,15 @@ class Timer:
     def _run_timer(self):
         while self.state in [TimerState.RUNNING, TimerState.PAUSED] and self.remaining_time > 0:
             if not self.paused:
-                time.sleep(1)
-                self.remaining_time -= 1
+                current_time = time.time()
+                elapsed_time = current_time - self.last_update_time
+                self.remaining_time -= elapsed_time
+                self.last_update_time = current_time
                 self._notify_observers()
-            else:
-                time.sleep(0.1)  # 一時停止中は短い間隔でチェック
+            time.sleep(0.1)  # より短い間隔でチェック
 
-        if self.remaining_time == 0:
+        if self.remaining_time <= 0:
+            self.remaining_time = 0
             self._timer_completed()
 
     def _timer_completed(self):
