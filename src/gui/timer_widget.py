@@ -87,3 +87,8 @@ class TimerWidget(QWidget):
             return QColor("#2196F3")  # 青色
         else:  # LONG_BREAK
             return QColor("#FFC107")  # 黄色
+
+    def update_display(self):
+        formatted_time = format_time(self.timer.remaining_time)
+        self.time_label.setText(formatted_time)
+        self.update()

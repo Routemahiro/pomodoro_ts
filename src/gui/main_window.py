@@ -116,6 +116,8 @@ class MainWindow(QMainWindow):
 
     def update_timer_settings(self, key, value):
         self.timer.update_settings(self.config)
+        # タイマーウィジェットの表示を更新
+        self.timer_widget.update_display()
 
     def setup_ui(self):
         # 左側のレイアウト

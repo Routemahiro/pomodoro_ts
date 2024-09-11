@@ -123,10 +123,14 @@ class Timer:
             observer(self.state, self.timer_type, self.remaining_time)
 
     def update_settings(self, config):
-        self.work_time = config.get('work_time')
-        self.short_break = config.get('short_break')
-        self.long_break = config.get('long_break')
-        # タイマーの表示を更新する処理を追加
+        self.config = config
+        if self.timer_type == TimerType.WORK:
+            self.remaining_time = self.config.get('work_time', 25 * 60)
+        elif self.timer_type == TimerType.SHORT_BREAK:
+            self.remaining_time = self.config.get('short_break', 5 * 60)
+        elif self.timer_type == TimerType.LONG_BREAK:
+            self.remaining_time = self.config.get('long_break', 15 * 60)
+        self._notify_observers()
 
     def is_running(self):
         return self.state == TimerState.RUNNING and not self.paused
