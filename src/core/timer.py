@@ -59,16 +59,16 @@ class Timer:
 
     def pause(self):
         if self.state == TimerState.RUNNING and not self.paused:
-            self.state = TimerState.PAUSED  # この行を追加
             self.paused = True
             self.paused_time = time.time() - self.start_time
+            self.state = TimerState.PAUSED
             self._notify_observers()
 
     def resume(self):
-        if self.state == TimerState.PAUSED:  # この行を変更
-            self.state = TimerState.RUNNING  # この行を追加
-            self.start_time = time.time() - self.paused_time
+        if self.state == TimerState.PAUSED:
             self.paused = False
+            self.start_time = time.time() - self.paused_time
+            self.state = TimerState.RUNNING
             self._notify_observers()
 
     def stop(self):
@@ -78,10 +78,13 @@ class Timer:
             self._notify_observers()
 
     def _run_timer(self):
-        while self.state == TimerState.RUNNING and self.remaining_time > 0:
-            time.sleep(1)
-            self.remaining_time -= 1
-            self._notify_observers()
+        while self.state in [TimerState.RUNNING, TimerState.PAUSED] and self.remaining_time > 0:
+            if not self.paused:
+                time.sleep(1)
+                self.remaining_time -= 1
+                self._notify_observers()
+            else:
+                time.sleep(0.1)  # 一時停止中は短い間隔でチェック
 
         if self.remaining_time == 0:
             self._timer_completed()
@@ -123,14 +126,10 @@ class Timer:
             observer(self.state, self.timer_type, self.remaining_time)
 
     def update_settings(self, config):
-        self.config = config
-        if self.timer_type == TimerType.WORK:
-            self.remaining_time = self.config.get('work_time', 25 * 60)
-        elif self.timer_type == TimerType.SHORT_BREAK:
-            self.remaining_time = self.config.get('short_break', 5 * 60)
-        elif self.timer_type == TimerType.LONG_BREAK:
-            self.remaining_time = self.config.get('long_break', 15 * 60)
-        self._notify_observers()
+        self.work_time = config.get('work_time')
+        self.short_break = config.get('short_break')
+        self.long_break = config.get('long_break')
+        # タイマーの表示を更新する処理を追加
 
     def is_running(self):
         return self.state == TimerState.RUNNING and not self.paused

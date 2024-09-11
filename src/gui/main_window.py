@@ -116,8 +116,6 @@ class MainWindow(QMainWindow):
 
     def update_timer_settings(self, key, value):
         self.timer.update_settings(self.config)
-        # タイマーウィジェットの表示を更新
-        self.timer_widget.update_display()
 
     def setup_ui(self):
         # 左側のレイアウト
@@ -190,13 +188,12 @@ class MainWindow(QMainWindow):
 
     def toggle_timer(self):
         if self.timer.state == TimerState.RUNNING:
-            if self.timer.paused:
-                self.timer.resume()
-                self.start_pause_button.setText("Pause")
-            else:
-                self.timer.pause()
-                self.start_pause_button.setText("Resume")
-        else:
+            self.timer.pause()
+            self.start_pause_button.setText("Resume")
+        elif self.timer.state == TimerState.PAUSED:
+            self.timer.resume()
+            self.start_pause_button.setText("Pause")
+        else:  # IDLE状態
             self.timer.start()
             self.start_pause_button.setText("Pause")
 
@@ -206,3 +203,11 @@ class MainWindow(QMainWindow):
     def setup_shortcuts(self):
         # キーボードショートカットの設定
         pass
+
+    def timer_updated(self, state, timer_type, remaining_time):
+        if state == TimerState.PAUSED:
+            self.start_pause_button.setText("Resume")
+        elif state == TimerState.RUNNING:
+            self.start_pause_button.setText("Pause")
+        elif state == TimerState.IDLE:
+            self.start_pause_button.setText("Start")
