@@ -133,6 +133,7 @@ class MainWindow(QMainWindow):
         self.start_pause_button = create_button("Start", style_class="primary")
         self.reset_button = create_button("Reset", style_class="secondary")
         self.reset_button.setEnabled(False)  # 初期状態では無効化
+        self.reset_button.setProperty("disabled", True)  # この行を追加
         timer_buttons.addWidget(self.start_pause_button)
         timer_buttons.addWidget(self.reset_button)
         timer_layout.addLayout(timer_buttons)
@@ -203,12 +204,17 @@ class MainWindow(QMainWindow):
         if state == TimerState.PAUSED.name:
             self.start_pause_button.setText("Resume")
             self.reset_button.setEnabled(can_reset)
+            self.reset_button.setProperty("disabled", not can_reset)
         elif state == TimerState.RUNNING.name:
             self.start_pause_button.setText("Pause")
             self.reset_button.setEnabled(False)
+            self.reset_button.setProperty("disabled", True)
         elif state == TimerState.IDLE.name:
             self.start_pause_button.setText("Start")
             self.reset_button.setEnabled(False)
+            self.reset_button.setProperty("disabled", True)
+        self.reset_button.style().unpolish(self.reset_button)
+        self.reset_button.style().polish(self.reset_button)
 
     def update_ui_on_timer_stop(self):
         self.start_pause_button.setText("Start")

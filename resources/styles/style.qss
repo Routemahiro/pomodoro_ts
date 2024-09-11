@@ -63,6 +63,11 @@ QPushButton:pressed {
     background-color: #2a5d8c;
 }
 
+QPushButton:disabled {
+    background-color: #cccccc;
+    color: #666666;
+}
+
 /* 入力フィールド */
 QLineEdit, QTextEdit {
     background-color: white;
