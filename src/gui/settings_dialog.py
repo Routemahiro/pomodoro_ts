@@ -70,6 +70,11 @@ class SettingsDialog(QDialog):
         self.api_key_input.setEchoMode(QLineEdit.Password)
         form_layout.addRow("OpenAI APIキー:", self.api_key_input)
 
+        # テストモード設定
+        self.test_mode_checkbox = QCheckBox("テストモード")
+        self.test_mode_checkbox.setChecked(self.config.get('test_mode', False))
+        form_layout.addRow("テストモード:", self.test_mode_checkbox)
+
         layout.addLayout(form_layout)
 
         # 保存ボタン
@@ -87,6 +92,7 @@ class SettingsDialog(QDialog):
         self.config.set('notifications_enabled', self.notification_checkbox.isChecked())
         self.config.set('theme', new_theme)
         self.config.set('openai_api_key', self.api_key_input.text())
+        self.config.set('test_mode', self.test_mode_checkbox.isChecked())
         
         self.config.save()
 

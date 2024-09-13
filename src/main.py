@@ -72,6 +72,12 @@ def main():
     ai_conversation_manager = AIConversationManager(db)
     ai_interface = AIInterface(config, ai_conversation_manager)
 
+    # 設定変更時のコールバックを登録
+    config.register_observer('test_mode', lambda key, value: timer.update_settings(config))
+    config.register_observer('work_time', lambda key, value: timer.update_settings(config))
+    config.register_observer('short_break', lambda key, value: timer.update_settings(config))
+    config.register_observer('long_break', lambda key, value: timer.update_settings(config))
+
     # メインウィンドウの作成と表示
     main_window = MainWindow(timer, session_manager, task_manager, ai_interface, config)
     main_window.show()
