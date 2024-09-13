@@ -91,4 +91,6 @@ class TimerWidget(QWidget):
     def update_display(self):
         formatted_time = format_time(self.timer.remaining_time)
         self.time_label.setText(formatted_time)
+        total_duration = self.get_total_duration(self.timer.timer_type)
+        self.progress = 1 - (self.timer.remaining_time / total_duration)
         self.update()

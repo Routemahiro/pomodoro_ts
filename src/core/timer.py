@@ -145,3 +145,14 @@ class Timer:
 
     def is_running(self):
         return self.state == TimerState.RUNNING and not self.paused
+
+    def reset(self):
+        self.state = TimerState.IDLE
+        self.timer_type = TimerType.WORK
+        self.remaining_time = self.config.get('work_time', 25 * 60)
+        self.pomodoro_count = 0
+        self.paused = False
+        self.start_time = 0
+        self.last_update_time = 0
+        self.can_reset = False
+        self._notify_observers()

@@ -40,7 +40,7 @@ from src.gui.ai_chat_panel import AIChatPanel
 from src.gui.settings_dialog import SettingsDialog
 from src.gui.report_window import ReportWindow
 from src.utils.ui_helpers import create_button, load_stylesheet
-from src.core.timer import TimerState  # この行を追加
+from src.core.timer import TimerState, TimerType  # この行を修正
 
 class MainWindow(QMainWindow):
     def __init__(self, timer, session_manager, task_manager, ai_interface, config):
@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
 
     def connect_signals(self):
         self.start_pause_button.clicked.connect(self.toggle_timer)
-        self.reset_button.clicked.connect(self.timer.stop)
+        self.reset_button.clicked.connect(self.reset_timer)
         self.timer_widget.timer_updated.connect(self.update_ui_on_timer_update)
         self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
         self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
@@ -192,13 +192,15 @@ class MainWindow(QMainWindow):
     def toggle_timer(self):
         if self.timer.state == TimerState.RUNNING:
             self.timer.pause()
-            self.start_pause_button.setText("Resume")
         elif self.timer.state == TimerState.PAUSED:
             self.timer.resume()
-            self.start_pause_button.setText("Pause")
         else:  # IDLE状態
             self.timer.start()
-            self.start_pause_button.setText("Pause")
+        self.update_ui_on_timer_update(self.timer.state.name, self.timer.timer_type.name, self.timer.remaining_time, self.timer.can_reset)
+
+    def reset_timer(self):
+        self.timer.reset()
+        self.update_ui_on_timer_update(TimerState.IDLE.name, self.timer.timer_type.name, self.timer.remaining_time, False)
 
     def update_ui_on_timer_update(self, state, timer_type, remaining_time, can_reset):
         if state == TimerState.PAUSED.name:
@@ -215,6 +217,7 @@ class MainWindow(QMainWindow):
             self.reset_button.setProperty("disabled", True)
         self.reset_button.style().unpolish(self.reset_button)
         self.reset_button.style().polish(self.reset_button)
+        self.timer_widget.update_display()
 
     def update_ui_on_timer_stop(self):
         self.start_pause_button.setText("Start")
