@@ -77,7 +77,7 @@ class MiniDashboardWidget(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)  # マージンを追加
+        layout.setContentsMargins(5, 5, 5, 5)  # マージンを小さくする
         self.completed_pomodoros_label = QLabel()
         self.total_focus_time_label = QLabel()
         self.completed_tasks_label = QLabel()
@@ -89,8 +89,8 @@ class MiniDashboardWidget(QWidget):
         self.setStyleSheet("""
             QLabel {
                 color: #333;
-                font-size: 12px;
-                margin-bottom: 5px;
+                font-size: 10px;  # フォントサイズを小さくする
+                margin-bottom: 2px;
             }
         """)
 

@@ -154,9 +154,14 @@ class MainWindow(QMainWindow):
         right_layout = QVBoxLayout()
         right_layout.setAlignment(Qt.AlignRight)  # 右寄せに設定
 
+        # ボタンのサイズを固定（Settings以外）
+        button_size = QSize(150, 40)  # 幅150px、高さ40px
+
         # TasksとAI Chatボタン
         self.tasks_button = create_button("Tasks", style_class="secondary")
         self.ai_chat_button = create_button("AI Chat", style_class="secondary")
+        self.tasks_button.setFixedSize(button_size)
+        self.ai_chat_button.setFixedSize(button_size)
         right_layout.addWidget(self.tasks_button)
         right_layout.addWidget(self.ai_chat_button)
 
@@ -164,16 +169,18 @@ class MainWindow(QMainWindow):
 
         # ダッシュボード
         self.dashboard_button = create_button("Dashboard", style_class="secondary")
+        self.dashboard_button.setFixedSize(button_size)
         right_layout.addWidget(self.dashboard_button)
 
         # ミニダッシュボードウィジェットを追加
         self.mini_dashboard = MiniDashboardWidget(self.session_manager, self.task_manager)
         self.mini_dashboard.hide()  # デフォルトで非表示に設定
+        self.mini_dashboard.setFixedWidth(button_size.width())  # ミニダッシュボードの幅を固定
         right_layout.addWidget(self.mini_dashboard)
 
         right_layout.addStretch(1)
 
-        # 設定ボタン
+        # 設定ボタン（サイズ固定しない）
         self.settings_button = create_button("Settings", style_class="secondary")
         right_layout.addWidget(self.settings_button)
 
