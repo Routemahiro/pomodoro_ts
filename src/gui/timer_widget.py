@@ -65,10 +65,12 @@ class TimerWidget(QWidget):
         painter.drawArc(rect, 90 * 16, -self.progress * 360 * 16)
 
     def update_timer(self, state, timer_type, remaining_time, can_reset):
+        if remaining_time < 0:
+            remaining_time = 0
         formatted_time = format_time(remaining_time)
         self.time_label.setText(formatted_time)
         total_duration = self.get_total_duration(timer_type)
-        self.progress = 1 - (remaining_time / total_duration)
+        self.progress = 1 - (remaining_time / total_duration) if total_duration > 0 else 0
         self.update()
         self.timer_updated.emit(state.name, timer_type.name, remaining_time, can_reset)
 
@@ -89,8 +91,10 @@ class TimerWidget(QWidget):
             return QColor("#FFC107")  # 黄色
 
     def update_display(self):
+        if self.timer.remaining_time < 0:
+            self.timer.remaining_time = 0
         formatted_time = format_time(self.timer.remaining_time)
         self.time_label.setText(formatted_time)
         total_duration = self.get_total_duration(self.timer.timer_type)
-        self.progress = 1 - (self.timer.remaining_time / total_duration)
+        self.progress = 1 - (self.timer.remaining_time / total_duration) if total_duration > 0 else 0
         self.update()
