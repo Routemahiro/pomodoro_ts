@@ -182,12 +182,20 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
     def connect_signals(self):
+        # 既存のシグナル接続
         self.start_pause_button.clicked.connect(self.toggle_timer)
         self.reset_button.clicked.connect(self.reset_timer)
         self.timer_widget.timer_updated.connect(self.update_ui_on_timer_update)
-        self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
-        self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
-        self.settings_button.clicked.connect(self.show_settings_dialog)
+        # 新たに追加
+        self.timer_widget.timer_updated.connect(self.on_timer_updated)
+
+    def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
+        if timer_type == "WORK":
+            self.setWindowTitle("Pomodoro AI Assistant - 作業中")
+        elif timer_type == "SHORT_BREAK":
+            self.setWindowTitle("Pomodoro AI Assistant - 短い休憩")
+        elif timer_type == "LONG_BREAK":
+            self.setWindowTitle("Pomodoro AI Assistant - 長い休憩")
 
     def toggle_timer(self):
         if self.timer.state == TimerState.RUNNING:
