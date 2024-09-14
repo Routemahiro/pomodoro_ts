@@ -33,7 +33,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QP
 from PySide6.QtCore import Qt, QSize
 from src.gui.timer_widget import TimerWidget
 from src.gui.character_widget import CharacterWidget
-from src.gui.dashboard_widget import DashboardWidget
+from src.gui.dashboard_widget import DashboardWidget, MiniDashboardWidget  # MiniDashboardWidgetを追加
 from src.gui.slide_panel import SlidePanel
 from src.gui.task_panel import TaskPanel
 from src.gui.ai_chat_panel import AIChatPanel
@@ -152,24 +152,30 @@ class MainWindow(QMainWindow):
 
         # 右側のレイアウト
         right_layout = QVBoxLayout()
+        right_layout.setAlignment(Qt.AlignRight)  # 右寄せに設定
 
         # TasksとAI Chatボタン
-        top_buttons = QHBoxLayout()
         self.tasks_button = create_button("Tasks", style_class="secondary")
         self.ai_chat_button = create_button("AI Chat", style_class="secondary")
-        top_buttons.addWidget(self.tasks_button)
-        top_buttons.addWidget(self.ai_chat_button)
-        right_layout.addLayout(top_buttons)
+        right_layout.addWidget(self.tasks_button)
+        right_layout.addWidget(self.ai_chat_button)
+
+        right_layout.addSpacing(20)  # Dashboardとの間にスペースを追加
 
         # ダッシュボード
-        self.dashboard_widget = DashboardWidget(self.session_manager, self.task_manager)
-        right_layout.addWidget(self.dashboard_widget)
+        self.dashboard_button = create_button("Dashboard", style_class="secondary")
+        right_layout.addWidget(self.dashboard_button)
+
+        # ミニダッシュボードウィジェットを追加
+        self.mini_dashboard = MiniDashboardWidget(self.session_manager, self.task_manager)
+        self.mini_dashboard.hide()  # デフォルトで非表示に設定
+        right_layout.addWidget(self.mini_dashboard)
 
         right_layout.addStretch(1)
 
         # 設定ボタン
         self.settings_button = create_button("Settings", style_class="secondary")
-        right_layout.addWidget(self.settings_button, alignment=Qt.AlignRight | Qt.AlignBottom)
+        right_layout.addWidget(self.settings_button)
 
         # メインレイアウトに追加
         self.main_layout.addLayout(left_layout, 2)
@@ -178,9 +184,11 @@ class MainWindow(QMainWindow):
         # スライドパネル
         self.slide_panel = SlidePanel(self)
         self.task_panel = TaskPanel(self.task_manager)
-        self.ai_chat_panel = AIChatPanel(self.ai_interface, self.task_manager)  # task_managerを追加
+        self.ai_chat_panel = AIChatPanel(self.ai_interface, self.task_manager)
+        self.dashboard_widget = DashboardWidget(self.session_manager, self.task_manager)
         self.slide_panel.add_panel("Tasks", self.task_panel)
         self.slide_panel.add_panel("AI Chat", self.ai_chat_panel)
+        self.slide_panel.add_panel("Dashboard", self.dashboard_widget)
 
         self.connect_signals()
 
@@ -194,9 +202,10 @@ class MainWindow(QMainWindow):
         # 設定ボタンのシグナル接続を追加
         self.settings_button.clicked.connect(self.show_settings_dialog)
         
-        # タスクとAIチャットボタンのシグナル接続も追加しておくといいかも
+        # タスク、AIチャット、ダッシュボードボタンのシグナル接続
         self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
         self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
+        self.dashboard_button.clicked.connect(self.toggle_mini_dashboard)
 
     def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
         if timer_type == "WORK":
@@ -239,11 +248,16 @@ class MainWindow(QMainWindow):
         self.reset_button.style().polish(self.reset_button)
         self.timer_widget.update_display()
 
-        # 削除：next_session_buttonに関する処理
-
     def update_ui_on_timer_stop(self):
         self.start_pause_button.setText("Start")
 
     def setup_shortcuts(self):
         # キーボードショートカットの設定
         pass
+
+    def toggle_mini_dashboard(self):
+        if self.mini_dashboard.isVisible():
+            self.mini_dashboard.hide()
+        else:
+            self.mini_dashboard.show()
+            self.mini_dashboard.update_stats()  # 表示時に統計を更新

@@ -67,3 +67,40 @@ class DashboardWidget(QWidget):
     def showEvent(self, event):
         super().showEvent(event)
         self.update_dashboard()
+
+class MiniDashboardWidget(QWidget):
+    def __init__(self, session_manager, task_manager):
+        super().__init__()
+        self.session_manager = session_manager
+        self.task_manager = task_manager
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)  # マージンを追加
+        self.completed_pomodoros_label = QLabel()
+        self.total_focus_time_label = QLabel()
+        self.completed_tasks_label = QLabel()
+
+        layout.addWidget(self.completed_pomodoros_label)
+        layout.addWidget(self.total_focus_time_label)
+        layout.addWidget(self.completed_tasks_label)
+
+        self.setStyleSheet("""
+            QLabel {
+                color: #333;
+                font-size: 12px;
+                margin-bottom: 5px;
+            }
+        """)
+
+    def update_stats(self):
+        stats = self.session_manager.get_today_stats()
+        completed_tasks = self.task_manager.get_completed_tasks_count()
+        self.completed_pomodoros_label.setText(f"完了したポモドーロ: {stats['completed_pomodoros']}")
+        self.total_focus_time_label.setText(f"総集中時間: {stats['total_focus_time'] // 60}分")
+        self.completed_tasks_label.setText(f"完了したタスク: {completed_tasks}")
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.update_stats()
