@@ -186,8 +186,14 @@ class MainWindow(QMainWindow):
         self.start_pause_button.clicked.connect(self.toggle_timer)
         self.reset_button.clicked.connect(self.reset_timer)
         self.timer_widget.timer_updated.connect(self.update_ui_on_timer_update)
-        # 新たに追加
         self.timer_widget.timer_updated.connect(self.on_timer_updated)
+        
+        # 設定ボタンのシグナル接続を追加
+        self.settings_button.clicked.connect(self.show_settings_dialog)
+        
+        # タスクとAIチャットボタンのシグナル接続も追加しておくといいかも
+        self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
+        self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
 
     def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
         if timer_type == "WORK":
