@@ -75,6 +75,11 @@ class SettingsDialog(QDialog):
         self.test_mode_checkbox.setChecked(self.config.get('test_mode', False))
         form_layout.addRow("テストモード:", self.test_mode_checkbox)
 
+        # 手動セッション切り替え設定を追加
+        self.manual_switch_checkbox = QCheckBox("手動セッション切り替え")
+        self.manual_switch_checkbox.setChecked(self.config.get('manual_session_switch', False))
+        form_layout.addRow("手動セッション切り替え:", self.manual_switch_checkbox)
+
         layout.addLayout(form_layout)
 
         # 保存ボタン
@@ -93,7 +98,8 @@ class SettingsDialog(QDialog):
         self.config.set('theme', new_theme)
         self.config.set('openai_api_key', self.api_key_input.text())
         self.config.set('test_mode', self.test_mode_checkbox.isChecked())
-        
+        # 手動セッション切り替え設定の保存
+        self.config.set('manual_session_switch', self.manual_switch_checkbox.isChecked())
         self.config.save()
 
         # テーマが変更された場合、メインウィンドウのテーマを更新

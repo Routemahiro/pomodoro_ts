@@ -19,25 +19,23 @@
 """
 
 import sqlite3
+import threading
 from src.utils.config import config
 from typing import List, Dict, Any
 import logging
 
 class Database:
     def __init__(self, config):
-        self.config = config
-        self.conn = None
+        self.db_path = config.get('database_path', 'data/pomodoro.db')
+        self.lock = threading.Lock()  # ロックを追加
+        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)  # check_same_thread=False を設定
+        self.conn.row_factory = sqlite3.Row
+        self.initialize_database()
 
-    def initialize(self):
-        db_path = self.config.get('database_path', 'data/pomodoro.db')
-        self.conn = sqlite3.connect(db_path)
-        self.conn.execute("PRAGMA foreign_keys = ON")
-        self.create_tables()
-        self.create_indexes()
-
-    def create_tables(self):
-        with self.conn:
-            self.conn.executescript('''
+    def initialize_database(self):
+        with self.lock:  # ロックを使用
+            cursor = self.conn.cursor()
+            cursor.executescript('''
                 CREATE TABLE IF NOT EXISTS tasks (
                     id INTEGER PRIMARY KEY,
                     title TEXT NOT NULL,
@@ -50,10 +48,10 @@ class Database:
                 );
 
                 CREATE TABLE IF NOT EXISTS sessions (
-                    id INTEGER PRIMARY KEY,
-                    start_time TIMESTAMP,
-                    end_time TIMESTAMP,
-                    duration INTEGER,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    start_time TEXT NOT NULL,
+                    end_time TEXT NOT NULL,
+                    duration REAL NOT NULL,
                     task_id INTEGER,
                     FOREIGN KEY (task_id) REFERENCES tasks (id)
                 );
@@ -73,9 +71,11 @@ class Database:
                     FOREIGN KEY (task_id) REFERENCES tasks (id)
                 );
             ''')
+            # 他のテーブル初期化も同様にロック内で行う
+            self.conn.commit()
 
     def create_indexes(self):
-        with self.conn:
+        with self.lock:  # ロックを使用
             self.conn.executescript('''
                 CREATE INDEX IF NOT EXISTS idx_tasks_parent_id ON tasks (parent_id);
                 CREATE INDEX IF NOT EXISTS idx_sessions_task_id ON sessions (task_id);
@@ -84,33 +84,36 @@ class Database:
             ''')
 
     def execute_query(self, query: str, params: tuple = ()) -> List[Dict[str, Any]]:
-        try:
-            with self.conn:
+        with self.lock:  # ロックを使用
+            try:
                 cursor = self.conn.execute(query, params)
-                columns = [column[0] for column in cursor.description]
-                return [dict(zip(columns, row)) for row in cursor.fetchall()]
-        except sqlite3.Error as e:
-            logging.error(f"データベースクエリの実行中にエラーが発生しました: {e}")
-            raise
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
+            except sqlite3.Error as e:
+                logging.error(f"データベースクエリの実行中にエラーが発生しました: {e}")
+                raise
 
     def execute_insert(self, query: str, params: tuple = ()) -> int:
-        try:
-            with self.conn:
+        with self.lock:  # ロックを使用
+            try:
                 cursor = self.conn.execute(query, params)
+                self.conn.commit()
                 return cursor.lastrowid
-        except sqlite3.Error as e:
-            logging.error(f"データの挿入中にエラーが発生しました: {e}")
-            raise
+            except sqlite3.Error as e:
+                logging.error(f"データの挿入中にエラーが発生しました: {e}")
+                raise
 
     def execute_update(self, query: str, params: tuple = ()) -> int:
-        try:
-            with self.conn:
+        with self.lock:  # ロックを使用
+            try:
                 cursor = self.conn.execute(query, params)
+                self.conn.commit()
                 return cursor.rowcount
-        except sqlite3.Error as e:
-            logging.error(f"データの更新中にエラーが発生しました: {e}")
-            raise
+            except sqlite3.Error as e:
+                logging.error(f"データの更新中にエラーが発生しました: {e}")
+                raise
 
     def close(self):
-        if self.conn:
-            self.conn.close()
+        with self.lock:  # ロックを使用
+            if self.conn:
+                self.conn.close()

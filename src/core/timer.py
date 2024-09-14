@@ -24,6 +24,7 @@ import threading
 from enum import Enum
 from src.utils.config import config
 from src.core.notification_manager import NotificationManager
+from src.core.session_manager import SessionManager  # この行を追加
 
 class TimerState(Enum):
     IDLE = 0
@@ -36,9 +37,10 @@ class TimerType(Enum):
     LONG_BREAK = 2
 
 class Timer:
-    def __init__(self, config, notification_manager: NotificationManager):
+    def __init__(self, config, notification_manager: NotificationManager, session_manager: SessionManager):  # SessionManagerを追加
         self.config = config
         self.notification_manager = notification_manager
+        self.session_manager = session_manager  # SessionManagerを保存
         self.state = TimerState.IDLE
         self.timer_type = TimerType.WORK
         self.remaining_time = self.config.get('work_time', 25 * 60)
@@ -59,6 +61,7 @@ class Timer:
             self.timer_thread = threading.Thread(target=self._run_timer)
             self.timer_thread.start()
             self._notify_observers()
+            self.session_manager.start_session()  # セッションの開始を通知
 
     def pause(self):
         if self.state == TimerState.RUNNING and not self.paused:
@@ -104,6 +107,20 @@ class Timer:
 
     def _timer_completed(self):
         self.notification_manager.send_notification("タイマー終了", f"{self.timer_type.name}の時間が終了しました。")
+        self.session_manager.end_session()  # セッションの終了を通知
+
+        manual_switch = self.config.get('manual_session_switch', False)
+
+        if not manual_switch:
+            # 手動切り替えがオフの場合は自動で次のセッションを開始
+            self._start_next_session()
+        else:
+            # 手動切り替えがオンの場合はタイマーを停止状態にする
+            self.state = TimerState.IDLE
+            self._notify_observers()
+
+    def _start_next_session(self):
+        self.state = TimerState.IDLE  # TimerをIDLEにリセット
         if self.timer_type == TimerType.WORK:
             self.pomodoro_count += 1
             if self.pomodoro_count % self.config.get('pomodoros_before_long_break', 4) == 0:
@@ -112,21 +129,11 @@ class Timer:
                 self._switch_to_short_break()
         else:
             self._switch_to_work()
+        self.start()  # Timerを再起動
 
-    def _switch_to_work(self):
-        self.timer_type = TimerType.WORK
-        self.remaining_time = self.work_time
-        self._notify_observers()
-
-    def _switch_to_short_break(self):
-        self.timer_type = TimerType.SHORT_BREAK
-        self.remaining_time = self.short_break
-        self._notify_observers()
-
-    def _switch_to_long_break(self):
-        self.timer_type = TimerType.LONG_BREAK
-        self.remaining_time = self.long_break
-        self._notify_observers()
+    def start_next_session(self):
+        # 手動で次のセッションを開始
+        self._start_next_session()
 
     def add_observer(self, observer):
         self.observers.append(observer)
@@ -170,4 +177,20 @@ class Timer:
         self.start_time = 0
         self.last_update_time = 0
         self.can_reset = False
+        self._notify_observers()
+        self.session_manager.end_session()  # セッションの終了を通知
+
+    def _switch_to_work(self):
+        self.timer_type = TimerType.WORK
+        self.remaining_time = self.work_time
+        self._notify_observers()
+
+    def _switch_to_short_break(self):
+        self.timer_type = TimerType.SHORT_BREAK
+        self.remaining_time = self.short_break
+        self._notify_observers()
+
+    def _switch_to_long_break(self):
+        self.timer_type = TimerType.LONG_BREAK
+        self.remaining_time = self.long_break
         self._notify_observers()

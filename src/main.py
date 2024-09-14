@@ -62,12 +62,12 @@ def main():
 
     # データベースの初期化
     db = Database(config)
-    db.initialize()
+    db.initialize_database()
 
     # 各コアモジュールの初期化
     notification_manager = NotificationManager(config)
-    timer = Timer(config, notification_manager)
-    session_manager = SessionManager(db, config)
+    session_manager = SessionManager(db, config)  # session_managerを先に初期化
+    timer = Timer(config, notification_manager, session_manager)  # session_managerを渡す
     task_manager = TaskManager(db, config)
     ai_conversation_manager = AIConversationManager(db)
     ai_interface = AIInterface(config, ai_conversation_manager)
