@@ -128,19 +128,16 @@ class MainWindow(QMainWindow):
         self.timer_widget = TimerWidget(self.timer)
         timer_layout.addWidget(self.timer_widget, alignment=Qt.AlignCenter)
         
-        # Startとリセットボタン
-        timer_buttons = QHBoxLayout()
+        # Startボタンの作成（次のセッションへ進むボタンを兼ねる）
         self.start_pause_button = create_button("Start", style_class="primary")
-        self.reset_button = create_button("Reset", style_class="secondary")
-        self.reset_button.setEnabled(False)  # 初期状態では無効化
-        self.reset_button.setProperty("disabled", True)  # この行を追加
+        timer_buttons = QHBoxLayout()
         timer_buttons.addWidget(self.start_pause_button)
-        timer_buttons.addWidget(self.reset_button)
 
-        # 次のセッションへボタンを追加
-        self.next_session_button = create_button("次のセッションへ", style_class="secondary")
-        self.next_session_button.setVisible(False)  # 初期は非表示
-        timer_buttons.addWidget(self.next_session_button)
+        # リセットボタン
+        self.reset_button = create_button("Reset", style_class="secondary")
+        self.reset_button.setEnabled(False)
+        self.reset_button.setProperty("disabled", True)
+        timer_buttons.addWidget(self.reset_button)
 
         timer_layout.addLayout(timer_buttons)
 
@@ -200,9 +197,6 @@ class MainWindow(QMainWindow):
         # タスクとAIチャットボタンのシグナル接続も追加しておくといいかも
         self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
         self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
-        
-        # 次のセッションへボタンのシグナル接続を追加
-        self.next_session_button.clicked.connect(self.start_next_session)
 
     def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
         if timer_type == "WORK":
@@ -218,7 +212,10 @@ class MainWindow(QMainWindow):
         elif self.timer.state == TimerState.PAUSED:
             self.timer.resume()
         else:  # IDLE状態
-            self.timer.start()
+            if self.config.get('manual_session_switch', False) and self.timer.remaining_time == 0:
+                self.timer.start_next_session()
+            else:
+                self.timer.start()
         self.update_ui_on_timer_update(self.timer.state.name, self.timer.timer_type.name, self.timer.remaining_time, self.timer.can_reset)
 
     def reset_timer(self):
@@ -228,28 +225,21 @@ class MainWindow(QMainWindow):
     def update_ui_on_timer_update(self, state, timer_type, remaining_time, can_reset):
         if state == TimerState.PAUSED.name:
             self.start_pause_button.setText("Resume")
-            self.reset_button.setEnabled(can_reset)
-            self.reset_button.setProperty("disabled", not can_reset)
         elif state == TimerState.RUNNING.name:
             self.start_pause_button.setText("Pause")
-            self.reset_button.setEnabled(False)
-            self.reset_button.setProperty("disabled", True)
         elif state == TimerState.IDLE.name:
-            self.start_pause_button.setText("Start")
-            self.reset_button.setEnabled(False)
-            self.reset_button.setProperty("disabled", True)
+            if self.config.get('manual_session_switch', False) and remaining_time == 0:
+                self.start_pause_button.setText("次のセッションへ")
+            else:
+                self.start_pause_button.setText("Start")
+
+        self.reset_button.setEnabled(can_reset)
+        self.reset_button.setProperty("disabled", not can_reset)
         self.reset_button.style().unpolish(self.reset_button)
         self.reset_button.style().polish(self.reset_button)
         self.timer_widget.update_display()
 
-        # 手動セッション切り替えの場合のボタン表示制御
-        if self.config.get('manual_session_switch', False):
-            if self.timer.state == TimerState.IDLE and remaining_time == 0:
-                self.next_session_button.setVisible(True)
-            else:
-                self.next_session_button.setVisible(False)
-        else:
-            self.next_session_button.setVisible(False)
+        # 削除：next_session_buttonに関する処理
 
     def update_ui_on_timer_stop(self):
         self.start_pause_button.setText("Start")
@@ -257,8 +247,3 @@ class MainWindow(QMainWindow):
     def setup_shortcuts(self):
         # キーボードショートカットの設定
         pass
-
-    def start_next_session(self):
-        self.timer.start_next_session()
-        self.update_ui_on_timer_update(self.timer.state.name, self.timer.timer_type.name, self.timer.remaining_time, self.timer.can_reset)
-        self.next_session_button.setVisible(False)  # ボタンを非表示
