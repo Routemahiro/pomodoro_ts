@@ -153,6 +153,7 @@ class MainWindow(QMainWindow):
         # 右側のレイアウト
         right_layout = QVBoxLayout()
         right_layout.setAlignment(Qt.AlignRight)  # 右寄せに設定
+        right_layout.setContentsMargins(0, 10, 10, 10)  # 上、右、下に10ピクセルのマージンを追加
 
         # ボタンのサイズを固定（Settings以外）
         button_size = QSize(150, 40)  # 幅150px、高さ40px
@@ -163,6 +164,7 @@ class MainWindow(QMainWindow):
         self.tasks_button.setFixedSize(button_size)
         self.ai_chat_button.setFixedSize(button_size)
         right_layout.addWidget(self.tasks_button)
+        right_layout.addSpacing(5)  # ボタン間に5ピクセルの隙間を追加
         right_layout.addWidget(self.ai_chat_button)
 
         right_layout.addSpacing(20)  # Dashboardとの間にスペースを追加
