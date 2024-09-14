@@ -50,16 +50,22 @@ class SlidePanel(QWidget):
             self.show_panel(name)
 
     def show_panel(self, name: str):
+        print(f"Showing panel: {name}")  # デバッグ用のプリント文を追加
         if name in self.panels:
             self.stacked_widget.setCurrentWidget(self.panels[name])
             self.current_panel = name
             self.show()
+            self.raise_()  # パネルを最前面に表示
+            self.setGeometry(self.parent().width(), 0, self.width(), self.parent().height())
             self.animate_slide(True)
+        else:
+            print(f"Panel {name} not found")  # パネルが見つからない場合のエラーメッセージ
 
     def hide_panel(self):
         self.animate_slide(False)
 
     def animate_slide(self, show: bool):
+        print(f"Animating slide: {'show' if show else 'hide'}")  # デバッグ用のプリント文を追加
         start = self.parent().width() if show else self.x()
         end = self.parent().width() - self.width() if show else self.parent().width()
 
@@ -69,6 +75,8 @@ class SlidePanel(QWidget):
 
         if not show:
             self.animation.finished.connect(self.hide)
+        else:
+            self.animation.finished.connect(lambda: print("Animation finished"))  # アニメーション完了時のデバッグ出力
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

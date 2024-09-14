@@ -107,6 +107,9 @@ class MainWindow(QMainWindow):
         character_height = min(600, available_height)
         self.character_widget.setFixedSize(QSize(400, character_height))
 
+        # スライドパネルの位置を調整
+        self.slide_panel.setGeometry(self.width() - self.slide_panel.width(), 0, self.slide_panel.width(), self.height())
+
     def setup_config_observers(self):
         self.config.register_observer('work_time', self.update_timer_settings)
         self.config.register_observer('short_break', self.update_timer_settings)
@@ -178,6 +181,7 @@ class MainWindow(QMainWindow):
         self.mini_dashboard = MiniDashboardWidget(self.session_manager, self.task_manager)
         self.mini_dashboard.hide()  # デフォルトで非表示に設定
         self.mini_dashboard.setFixedWidth(button_size.width())  # ミニダッシュボードの幅を固定
+        self.mini_dashboard.setStyleSheet("background-color: transparent;")  # 透明な背景を設定
         right_layout.addWidget(self.mini_dashboard)
 
         right_layout.addStretch(1)
@@ -199,6 +203,12 @@ class MainWindow(QMainWindow):
         self.slide_panel.add_panel("AI Chat", self.ai_chat_panel)
         self.slide_panel.add_panel("Dashboard", self.dashboard_widget)
 
+        # スライドパネルのz-orderを最前面に設定
+        self.slide_panel.raise_()
+
+        # スライドパネルを右端に配置
+        self.slide_panel.move(self.width(), 0)
+
         self.connect_signals()
 
     def connect_signals(self):
@@ -212,9 +222,16 @@ class MainWindow(QMainWindow):
         self.settings_button.clicked.connect(self.show_settings_dialog)
         
         # タスク、AIチャット、ダッシュボードボタンのシグナル接続
-        self.tasks_button.clicked.connect(lambda: self.slide_panel.toggle_panel("Tasks"))
+        self.tasks_button.clicked.connect(self.show_tasks_panel)
         self.ai_chat_button.clicked.connect(lambda: self.slide_panel.toggle_panel("AI Chat"))
         self.dashboard_button.clicked.connect(self.toggle_mini_dashboard)
+
+    def show_tasks_panel(self):
+        print("Showing Tasks Panel")  # デバッグ用のプリント文を追加
+        self.slide_panel.show_panel("Tasks")
+        self.slide_panel.show()  # パネルを表示
+        print(f"Slide panel geometry: {self.slide_panel.geometry()}")  # パネルの位置とサイズを表示
+        print(f"Slide panel visible: {self.slide_panel.isVisible()}")  # パネルの表示状態を確認
 
     def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
         if timer_type == "WORK":
