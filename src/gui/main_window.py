@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
         self.character_widget.setFixedSize(QSize(400, character_height))
 
         # スライドパネルの位置を調整
-        self.slide_panel.setGeometry(self.width() - self.slide_panel.width(), 0, self.slide_panel.width(), self.height())
+        self.slide_panel.setGeometry(self.geometry().right(), self.geometry().top(), self.slide_panel.width(), self.height())
 
     def setup_config_observers(self):
         self.config.register_observer('work_time', self.update_timer_settings)
@@ -203,11 +203,8 @@ class MainWindow(QMainWindow):
         self.slide_panel.add_panel("AI Chat", self.ai_chat_panel)
         self.slide_panel.add_panel("Dashboard", self.dashboard_widget)
 
-        # スライドパネルのz-orderを最前面に設定
-        self.slide_panel.raise_()
-
-        # スライドパネルを右端に配置
-        self.slide_panel.move(self.width(), 0)
+        # スライドパネルの初期位置を設定
+        self.slide_panel.setGeometry(self.geometry().right(), self.geometry().top(), self.slide_panel.width(), self.height())
 
         self.connect_signals()
 
