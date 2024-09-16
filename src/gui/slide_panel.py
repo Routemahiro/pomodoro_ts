@@ -20,6 +20,12 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QStackedWidget
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QPoint
 from PySide6.QtGui import QMouseEvent
 
+# Windows APIを使用するためのインポートを追加
+import sys
+if sys.platform == "win32":
+    import win32gui
+    import win32con
+
 class SlidePanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Window | Qt.FramelessWindowHint)
@@ -114,3 +120,13 @@ class SlidePanel(QWidget):
         if event.button() == Qt.LeftButton:
             self.dragging = False
             event.accept()
+
+    def set_always_on_top(self, on_top):
+        if sys.platform == "win32":
+            hwnd = self.winId().__int__()
+            if on_top:
+                win32gui.SetWindowPos(hwnd, win32con.HWND_TOPMOST, 0, 0, 0, 0,
+                                      win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)
+            else:
+                win32gui.SetWindowPos(hwnd, win32con.HWND_NOTOPMOST, 0, 0, 0, 0,
+                                      win32con.SWP_NOMOVE | win32con.SWP_NOSIZE)

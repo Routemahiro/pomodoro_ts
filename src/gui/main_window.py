@@ -29,8 +29,9 @@
 - キャラクターウィジェットが他の要素と重ならないよう、適切なz-indexを設定すること
 """
 
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QFrame, QCheckBox
 from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QWindow
 from src.gui.timer_widget import TimerWidget
 from src.gui.character_widget import CharacterWidget
 from src.gui.dashboard_widget import DashboardWidget, MiniDashboardWidget  # MiniDashboardWidgetを追加
@@ -64,8 +65,6 @@ class MainWindow(QMainWindow):
         self.setup_shortcuts()
         self.setup_config_observers()
         self.apply_theme()  # テーマを適用
-
-    # apply_stylesheetメソッドを削除
 
     def apply_theme(self):
         theme = self.config.get('theme', 'ライト')
@@ -190,6 +189,11 @@ class MainWindow(QMainWindow):
         self.settings_button = create_button("Settings", style_class="secondary")
         right_layout.addWidget(self.settings_button)
 
+        # スライドパネルを最前面に表示するためのチェックボックスを追加
+        self.always_on_top_checkbox = QCheckBox("スライドパネルを最前面に表示")
+        self.always_on_top_checkbox.stateChanged.connect(self.toggle_slide_panel_on_top)
+        right_layout.addWidget(self.always_on_top_checkbox)
+
         # メインレイアウトに追加
         self.main_layout.addLayout(left_layout, 2)
         self.main_layout.addLayout(right_layout, 1)
@@ -232,11 +236,13 @@ class MainWindow(QMainWindow):
         # パネルが表示されていない場合は強制的に表示する
         if not self.slide_panel.isVisible():
             self.slide_panel.show()
-            self.slide_panel.raise_()
         
         # パネルの位置を再設定
         parent_rect = self.geometry()
         self.slide_panel.setGeometry(parent_rect.right() - self.slide_panel.width(), parent_rect.top(), self.slide_panel.width(), parent_rect.height())
+
+        # チェックボックスの状態に応じてスライドパネルを最前面に表示
+        self.slide_panel.set_always_on_top(self.always_on_top_checkbox.isChecked())
 
     def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
         if timer_type == "WORK":
@@ -292,3 +298,7 @@ class MainWindow(QMainWindow):
         else:
             self.mini_dashboard.show()
             self.mini_dashboard.update_stats()  # 表示時に統計を更新
+
+    def toggle_slide_panel_on_top(self, state):
+        is_checked = state == Qt.Checked
+        self.slide_panel.set_always_on_top(is_checked)
