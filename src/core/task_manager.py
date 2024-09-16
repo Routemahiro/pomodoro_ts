@@ -21,7 +21,7 @@
 from src.data.database import Database
 from src.data.task_data import Task, TaskManager as DataTaskManager
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 class TaskManager:
     def __init__(self, database: Database, config):  # configパラメータを追加
@@ -86,3 +86,35 @@ class TaskManager:
     def get_completed_tasks_count(self) -> int:
         completed_tasks = [task for task in self.get_all_tasks() if task.status == 'completed']
         return len(completed_tasks)
+
+    def update_task_title(self, task_id: int, new_title: str) -> bool:
+        task = self.get_task(task_id)
+        if task:
+            task.title = new_title
+            task.updated_at = datetime.now()
+            return self.update_task(task)
+        return False
+
+    def update_task_status(self, task_id: int, new_status: str) -> bool:
+        task = self.get_task(task_id)
+        if task:
+            task.status = new_status
+            task.updated_at = datetime.now()
+            return self.update_task(task)
+        return False
+
+    def update_task_priority(self, task_id: int, new_priority: int) -> bool:
+        task = self.get_task(task_id)
+        if task:
+            task.priority = new_priority
+            task.updated_at = datetime.now()
+            return self.update_task(task)
+        return False
+
+    def update_task_due_date(self, task_id: int, new_due_date: Optional[datetime]) -> bool:
+        task = self.get_task(task_id)
+        if task:
+            task.due_date = new_due_date
+            task.updated_at = datetime.now()
+            return self.update_task(task)
+        return False

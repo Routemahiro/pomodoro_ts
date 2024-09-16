@@ -44,6 +44,8 @@ class Database:
                     parent_id INTEGER,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    priority INTEGER DEFAULT 0,
+                    due_date TIMESTAMP,
                     FOREIGN KEY (parent_id) REFERENCES tasks (id)
                 );
 

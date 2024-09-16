@@ -31,6 +31,8 @@ class Task:
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     subtasks: List['Task'] = field(default_factory=list)
+    priority: int = 0  # この行を追加
+    due_date: Optional[datetime] = None  # この行を追加
 
     def to_dict(self):
         task_dict = asdict(self)

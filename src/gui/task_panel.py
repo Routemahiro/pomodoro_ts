@@ -20,10 +20,11 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateTimeEdit
+from PySide6.QtCore import Qt, QDateTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
+from datetime import datetime
 
 class TaskPanel(QWidget):
     def __init__(self, task_manager: TaskManager):
@@ -36,7 +37,7 @@ class TaskPanel(QWidget):
 
         # タスクツリー
         self.task_tree = QTreeWidget()
-        self.task_tree.setHeaderLabels(["タスク", "状態"])
+        self.task_tree.setHeaderLabels(["タスク", "状態", "優先度", "期限"])
         self.task_tree.setDragDropMode(QTreeWidget.InternalMove)
         self.task_tree.itemChanged.connect(self.on_task_changed)
         layout.addWidget(self.task_tree)
@@ -60,7 +61,8 @@ class TaskPanel(QWidget):
             self.add_task_to_tree(task, self.task_tree.invisibleRootItem())
 
     def add_task_to_tree(self, task, parent_item):
-        item = QTreeWidgetItem(parent_item, [task.title, task.status])
+        due_date = task.due_date.strftime("%Y-%m-%d %H:%M") if task.due_date else ""
+        item = QTreeWidgetItem(parent_item, [task.title, task.status, str(task.priority), due_date])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         item.setData(0, Qt.UserRole, task.id)
         for subtask in task.subtasks:
@@ -69,8 +71,16 @@ class TaskPanel(QWidget):
     def add_task(self):
         title, ok = QInputDialog.getText(self, "タスク追加", "タスク名を入力してください:")
         if ok and title:
-            self.task_manager.create_task(title)
-            self.load_tasks()
+            priority, ok = QInputDialog.getInt(self, "優先度設定", "優先度を入力してください (0-10):", 0, 0, 10)
+            if ok:
+                due_date, ok = QInputDialog.getText(self, "期限設定", "期限を入力してください (YYYY-MM-DD HH:MM):")
+                if ok:
+                    try:
+                        due_date = datetime.strptime(due_date, "%Y-%m-%d %H:%M") if due_date else None
+                    except ValueError:
+                        due_date = None
+                    self.task_manager.create_task(title, priority=priority, due_date=due_date)
+                    self.load_tasks()
 
     def delete_task(self):
         selected_items = self.task_tree.selectedItems()
@@ -80,11 +90,20 @@ class TaskPanel(QWidget):
             self.load_tasks()
 
     def on_task_changed(self, item, column):
+        task_id = item.data(0, Qt.UserRole)
         if column == 0:  # タスク名が変更された場合
-            task_id = item.data(0, Qt.UserRole)
             new_title = item.text(0)
             self.task_manager.update_task_title(task_id, new_title)
         elif column == 1:  # 状態が変更された場合
-            task_id = item.data(0, Qt.UserRole)
             new_status = item.text(1)
             self.task_manager.update_task_status(task_id, new_status)
+        elif column == 2:  # 優先度が変更された場合
+            new_priority = int(item.text(2))
+            self.task_manager.update_task_priority(task_id, new_priority)
+        elif column == 3:  # 期限が変更された場合
+            new_due_date = item.text(3)
+            try:
+                new_due_date = datetime.strptime(new_due_date, "%Y-%m-%d %H:%M") if new_due_date else None
+                self.task_manager.update_task_due_date(task_id, new_due_date)
+            except ValueError:
+                pass  # 無効な日付形式の場合は無視
