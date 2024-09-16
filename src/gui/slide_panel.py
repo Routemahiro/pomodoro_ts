@@ -17,7 +17,8 @@
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QStackedWidget
-from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect
+from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QRect, QPoint
+from PySide6.QtGui import QMouseEvent
 
 class SlidePanel(QWidget):
     def __init__(self, parent=None):
@@ -38,6 +39,9 @@ class SlidePanel(QWidget):
         self.animation.setDuration(300)  # アニメーションの時間（ミリ秒）
 
         self.hide()  # 初期状態では非表示
+
+        self.dragging = False
+        self.drag_start_position = QPoint()
 
     def add_panel(self, name: str, panel: QWidget):
         self.panels[name] = panel
@@ -61,6 +65,7 @@ class SlidePanel(QWidget):
             end_rect = QRect(parent_rect.right(), parent_rect.top(), self.width(), parent_rect.height())
             self.setGeometry(start_rect)
             self.animate_slide(start_rect, end_rect)
+            self.dragging = False  # パネルを表示するときにドラッグ状態をリセット
         else:
             print(f"Panel {name} not found")  # パネルが見つからない場合のエラーメッセージ
 
@@ -69,6 +74,7 @@ class SlidePanel(QWidget):
         start_rect = self.geometry()
         end_rect = QRect(parent_rect.right(), parent_rect.top(), 1, parent_rect.height())
         self.animate_slide(start_rect, end_rect)
+        self.dragging = False  # パネルを隠すときにドラッグ状態をリセット
 
     def animate_slide(self, start_rect, end_rect):
         print(f"Animating slide: {start_rect} -> {end_rect}")  # デバッグ用のプリント文を追加
@@ -92,3 +98,19 @@ class SlidePanel(QWidget):
         super().resizeEvent(event)
         parent_rect = self.parent().geometry()
         self.setGeometry(parent_rect.right(), parent_rect.top(), self.width(), parent_rect.height())
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self.dragging = True
+            self.drag_start_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        if event.buttons() & Qt.LeftButton and self.dragging:
+            self.move(event.globalPos() - self.drag_start_position)
+            event.accept()
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self.dragging = False
+            event.accept()
