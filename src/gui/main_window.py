@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
         right_layout.addWidget(self.settings_button)
 
         # スライドパネルを最前面に表示するためのチェックボックスを追加
-        self.always_on_top_checkbox = QCheckBox("スライドパネルを最前面に表示")
+        self.always_on_top_checkbox = QCheckBox("パネル最前面表示")
         self.always_on_top_checkbox.stateChanged.connect(self.toggle_slide_panel_on_top)
         right_layout.addWidget(self.always_on_top_checkbox)
 
