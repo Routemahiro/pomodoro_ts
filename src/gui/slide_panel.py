@@ -2,7 +2,7 @@
 スライドインパネルの基本クラス
 
 役割:
-- 右側からスライドインするパネルの基本動作の実装
+- ウィンドウの外側にスライドアウトするパネルの動作管理。パネルの左端がメインウィンドウの右端にくっつくように表示される
 
 主な機能:
 - スムーズなスライドインとスライドアウトのアニメーション
@@ -74,12 +74,19 @@ class SlidePanel(QWidget):
         print(f"Animating slide: {start_rect} -> {end_rect}")  # デバッグ用のプリント文を追加
         self.animation.setStartValue(start_rect)
         self.animation.setEndValue(end_rect)
-        self.animation.start()
-
+        
+        # 既存のシグナル接続を切断
+        try:
+            self.animation.finished.disconnect()
+        except RuntimeError:
+            pass  # 接続がない場合は無視
+        
         if end_rect.width() == 1:
             self.animation.finished.connect(self.hide)
         else:
             self.animation.finished.connect(lambda: print("Animation finished"))  # アニメーション完了時のデバッグ出力
+        
+        self.animation.start()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

@@ -224,11 +224,19 @@ class MainWindow(QMainWindow):
         self.dashboard_button.clicked.connect(self.toggle_mini_dashboard)
 
     def show_tasks_panel(self):
-        print("Showing Tasks Panel")  # デバッグ用のプリント文を追加
-        self.slide_panel.show_panel("Tasks")
-        self.slide_panel.show()  # パネルを表示
-        print(f"Slide panel geometry: {self.slide_panel.geometry()}")  # パネルの位置とサイズを表示
-        print(f"Slide panel visible: {self.slide_panel.isVisible()}")  # パネルの表示状態を確認
+        print("Showing Tasks Panel")
+        self.slide_panel.toggle_panel("Tasks")
+        print(f"Slide panel geometry: {self.slide_panel.geometry()}")
+        print(f"Slide panel visible: {self.slide_panel.isVisible()}")
+        
+        # パネルが表示されていない場合は強制的に表示する
+        if not self.slide_panel.isVisible():
+            self.slide_panel.show()
+            self.slide_panel.raise_()
+        
+        # パネルの位置を再設定
+        parent_rect = self.geometry()
+        self.slide_panel.setGeometry(parent_rect.right() - self.slide_panel.width(), parent_rect.top(), self.slide_panel.width(), parent_rect.height())
 
     def on_timer_updated(self, state, timer_type, remaining_time, can_reset):
         if timer_type == "WORK":
