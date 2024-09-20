@@ -19,7 +19,7 @@
 """
 
 from src.data.database import Database
-from src.data.task_data import Task, TaskManager as DataTaskManager
+from src.data.task_data import Task, TaskManager as DataTaskManager, TaskPriority
 from datetime import datetime
 from typing import List, Optional
 
@@ -29,7 +29,7 @@ class TaskManager:
         self.config = config  # configを保存
         self.data_task_manager = DataTaskManager(database)
 
-    def create_task(self, title: str, description: str = "", parent_id: int = None, priority: int = 0, due_date: datetime = None) -> int:
+    def create_task(self, title: str, description: str = "", parent_id: int = None, priority: TaskPriority = TaskPriority.LOW, due_date: datetime = None) -> int:
         task = Task(title=title, description=description, parent_id=parent_id, priority=priority, due_date=due_date)
         return self.data_task_manager.create_task(task)
 
@@ -103,7 +103,7 @@ class TaskManager:
             return self.update_task(task)
         return False
 
-    def update_task_priority(self, task_id: int, new_priority: int) -> bool:
+    def update_task_priority(self, task_id: int, new_priority: TaskPriority) -> bool:
         task = self.get_task(task_id)
         if task:
             task.priority = new_priority

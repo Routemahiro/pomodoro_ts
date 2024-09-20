@@ -20,11 +20,12 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateTimeEdit
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel
 from PySide6.QtCore import Qt, QDateTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime
+from src.data.task_data import TaskPriority
 
 class TaskPanel(QWidget):
     def __init__(self, task_manager: TaskManager):
@@ -62,7 +63,7 @@ class TaskPanel(QWidget):
 
     def add_task_to_tree(self, task, parent_item):
         due_date = task.due_date.strftime("%Y-%m-%d %H:%M") if task.due_date else ""
-        item = QTreeWidgetItem(parent_item, [task.title, task.status, str(task.priority), due_date])
+        item = QTreeWidgetItem(parent_item, [task.title, task.status, task.priority.value, due_date])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         item.setData(0, Qt.UserRole, task.id)
         for subtask in task.subtasks:
@@ -71,16 +72,46 @@ class TaskPanel(QWidget):
     def add_task(self):
         title, ok = QInputDialog.getText(self, "タスク追加", "タスク名を入力してください:")
         if ok and title:
-            priority, ok = QInputDialog.getInt(self, "優先度設定", "優先度を入力してください (0-10):", 0, 0, 10)
+            priority = self.get_priority_from_user()
+            due_date, ok = QInputDialog.getText(self, "期限設定", "期限を入力してください (YYYY-MM-DD HH:MM):")
             if ok:
-                due_date, ok = QInputDialog.getText(self, "期限設定", "期限を入力してください (YYYY-MM-DD HH:MM):")
-                if ok:
-                    try:
-                        due_date = datetime.strptime(due_date, "%Y-%m-%d %H:%M") if due_date else None
-                    except ValueError:
-                        due_date = None
-                    self.task_manager.create_task(title, priority=priority, due_date=due_date)
-                    self.load_tasks()
+                try:
+                    due_date = datetime.strptime(due_date, "%Y-%m-%d %H:%M") if due_date else None
+                except ValueError:
+                    due_date = None
+                self.task_manager.create_task(title, priority=priority, due_date=due_date)
+                self.load_tasks()
+
+    def get_priority_from_user(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("優先度設定")
+        layout = QVBoxLayout(dialog)
+
+        # 説明ラベルを追加
+        label = QLabel("タスクの優先度を選択してください：")
+        layout.addWidget(label)
+
+        priority_group = QButtonGroup(dialog)
+        for priority in [TaskPriority.HIGH, TaskPriority.MEDIUM, TaskPriority.LOW]:
+            radio = QRadioButton(priority.value)
+            priority_group.addButton(radio)
+            layout.addWidget(radio)
+
+        # デフォルトで「低」を選択
+        priority_group.buttons()[-1].setChecked(True)
+
+        button_layout = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        ok_button.clicked.connect(dialog.accept)
+        cancel_button = QPushButton("キャンセル")
+        cancel_button.clicked.connect(dialog.reject)
+        button_layout.addWidget(ok_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+
+        if dialog.exec() == QDialog.Accepted:
+            return TaskPriority(priority_group.checkedButton().text())
+        return TaskPriority.LOW
 
     def delete_task(self):
         selected_items = self.task_tree.selectedItems()
@@ -98,7 +129,7 @@ class TaskPanel(QWidget):
             new_status = item.text(1)
             self.task_manager.update_task_status(task_id, new_status)
         elif column == 2:  # 優先度が変更された場合
-            new_priority = int(item.text(2))
+            new_priority = TaskPriority(item.text(2))
             self.task_manager.update_task_priority(task_id, new_priority)
         elif column == 3:  # 期限が変更された場合
             new_due_date = item.text(3)

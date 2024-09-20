@@ -20,6 +20,12 @@ from dataclasses import dataclass, asdict, field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 import logging
+from enum import Enum
+
+class TaskPriority(Enum):
+    HIGH = "高"
+    MEDIUM = "中"
+    LOW = "低"
 
 @dataclass
 class Task:
@@ -31,16 +37,19 @@ class Task:
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     subtasks: List['Task'] = field(default_factory=list)
-    priority: int = 0  # この行を追加
-    due_date: Optional[datetime] = None  # この行を追加
+    priority: TaskPriority = TaskPriority.LOW  # デフォルトを低に設定
+    due_date: Optional[datetime] = None
 
     def to_dict(self):
         task_dict = asdict(self)
+        task_dict['priority'] = self.priority.value
         task_dict['subtasks'] = [subtask.to_dict() for subtask in self.subtasks]
         return task_dict
 
     @classmethod
     def from_dict(cls, data):
+        if 'priority' in data:
+            data['priority'] = TaskPriority(data['priority'])
         subtasks = data.pop('subtasks', [])
         task = cls(**data)
         task.subtasks = [cls.from_dict(subtask) for subtask in subtasks]
