@@ -24,7 +24,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem
 from PySide6.QtCore import Qt, QDateTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
-from datetime import datetime
+from datetime import datetime, timedelta
 from src.data.task_data import TaskPriority
 
 class TaskPanel(QWidget):
@@ -73,12 +73,8 @@ class TaskPanel(QWidget):
         title, ok = QInputDialog.getText(self, "タスク追加", "タスク名を入力してください:")
         if ok and title:
             priority = self.get_priority_from_user()
-            due_date, ok = QInputDialog.getText(self, "期限設定", "期限を入力してください (YYYY-MM-DD HH:MM):")
-            if ok:
-                try:
-                    due_date = datetime.strptime(due_date, "%Y-%m-%d %H:%M") if due_date else None
-                except ValueError:
-                    due_date = None
+            due_date = self.get_due_date_from_user()
+            if due_date:
                 self.task_manager.create_task(title, priority=priority, due_date=due_date)
                 self.load_tasks()
 
@@ -112,6 +108,33 @@ class TaskPanel(QWidget):
         if dialog.exec() == QDialog.Accepted:
             return TaskPriority(priority_group.checkedButton().text())
         return TaskPriority.LOW
+
+    def get_due_date_from_user(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("期限設定")
+        layout = QVBoxLayout(dialog)
+
+        label = QLabel("タスクの期限を選択してください：")
+        layout.addWidget(label)
+
+        date_time_edit = QDateTimeEdit(dialog)
+        date_time_edit.setCalendarPopup(True)
+        default_date = QDateTime.currentDateTime().addDays(1)
+        date_time_edit.setDateTime(default_date)
+        layout.addWidget(date_time_edit)
+
+        button_layout = QHBoxLayout()
+        ok_button = QPushButton("OK")
+        ok_button.clicked.connect(dialog.accept)
+        cancel_button = QPushButton("キャンセル")
+        cancel_button.clicked.connect(dialog.reject)
+        button_layout.addWidget(ok_button)
+        button_layout.addWidget(cancel_button)
+        layout.addLayout(button_layout)
+
+        if dialog.exec() == QDialog.Accepted:
+            return date_time_edit.dateTime().toPython()
+        return None
 
     def delete_task(self):
         selected_items = self.task_tree.selectedItems()
