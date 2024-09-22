@@ -20,12 +20,13 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel
-from PySide6.QtCore import Qt, QDateTime
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox
+from PySide6.QtCore import Qt, QDate, QTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime, timedelta
 from src.data.task_data import TaskPriority
+
 
 class TaskPanel(QWidget):
     def __init__(self, task_manager: TaskManager):
@@ -117,11 +118,24 @@ class TaskPanel(QWidget):
         label = QLabel("タスクの期限を選択してください：")
         layout.addWidget(label)
 
-        date_time_edit = QDateTimeEdit(dialog)
-        date_time_edit.setCalendarPopup(True)
-        default_date = QDateTime.currentDateTime().addDays(1)
-        date_time_edit.setDateTime(default_date)
-        layout.addWidget(date_time_edit)
+        # 日付選択
+        date_edit = QDateEdit(dialog)
+        date_edit.setCalendarPopup(True)
+        date_edit.setDate(QDate.currentDate().addDays(1))
+        layout.addWidget(date_edit)
+
+        # 時間選択（時）
+        hour_combo = QComboBox(dialog)
+        hour_combo.addItems([f"{i:02d}" for i in range(24)])
+        hour_combo.setCurrentText(QTime.currentTime().toString("HH"))
+        layout.addWidget(hour_combo)
+
+        # 時間選択（分）
+        minute_combo = QComboBox(dialog)
+        minute_combo.addItems([f"{i:02d}" for i in range(0, 60, 5)])
+        current_minute = QTime.currentTime().minute()
+        minute_combo.setCurrentText(f"{(current_minute // 5) * 5:02d}")
+        layout.addWidget(minute_combo)
 
         button_layout = QHBoxLayout()
         ok_button = QPushButton("OK")
@@ -133,7 +147,9 @@ class TaskPanel(QWidget):
         layout.addLayout(button_layout)
 
         if dialog.exec() == QDialog.Accepted:
-            return date_time_edit.dateTime().toPython()
+            selected_date = date_edit.date().toPython()
+            selected_time = QTime(int(hour_combo.currentText()), int(minute_combo.currentText()))
+            return datetime.combine(selected_date, selected_time.toPython())
         return None
 
     def delete_task(self):
