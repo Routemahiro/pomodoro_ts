@@ -30,7 +30,7 @@ class SlidePanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent, Qt.Window | Qt.FramelessWindowHint)
         self.setObjectName("slidePanel")
-        self.setFixedWidth(300)  # パネルの幅を設定
+        self.setFixedWidth(500)  # パネルの幅を設定
         self.setStyleSheet("background-color: white; border-left: 1px solid #cccccc;")
 
         self.layout = QVBoxLayout(self)
