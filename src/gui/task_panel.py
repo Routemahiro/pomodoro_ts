@@ -44,6 +44,12 @@ class TaskPanel(QWidget):
         self.task_tree.itemChanged.connect(self.on_task_changed)
         layout.addWidget(self.task_tree)
 
+        # カラムの幅を設定
+        self.task_tree.setColumnWidth(0, 200)  # タスク
+        self.task_tree.setColumnWidth(1, 90)  # 状態
+        self.task_tree.setColumnWidth(2, 75)  # 優先度
+        self.task_tree.setColumnWidth(3, 150)  # 期限
+
         # ボタン
         button_layout = QHBoxLayout()
         add_task_button = create_button("タスク追加", style_class="primary")
