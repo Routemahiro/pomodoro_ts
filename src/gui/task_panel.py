@@ -28,15 +28,20 @@ from datetime import datetime, timedelta
 from src.data.task_data import TaskPriority, TaskStatus
 
 
-class StatusDelegate(QStyledItemDelegate):
+class TaskDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.statuses = [status.value for status in TaskStatus]
+        self.priorities = [priority.value for priority in TaskPriority]
 
     def createEditor(self, parent, option, index):
         if index.column() == 1:  # 状態列
             combo = QComboBox(parent)
             combo.addItems(self.statuses)
+            return combo
+        elif index.column() == 2:  # 優先度列
+            combo = QComboBox(parent)
+            combo.addItems(self.priorities)
             return combo
         return super().createEditor(parent, option, index)
 
@@ -45,6 +50,10 @@ class StatusDelegate(QStyledItemDelegate):
             current_text = index.data(Qt.EditRole)
             idx = self.statuses.index(current_text) if current_text in self.statuses else 0
             editor.setCurrentIndex(idx)
+        elif index.column() == 2:
+            current_text = index.data(Qt.EditRole)
+            idx = self.priorities.index(current_text) if current_text in self.priorities else 0
+            editor.setCurrentIndex(idx)
         else:
             super().setEditorData(editor, index)
 
@@ -52,6 +61,9 @@ class StatusDelegate(QStyledItemDelegate):
         if index.column() == 1:
             new_status = editor.currentText()
             model.setData(index, new_status, Qt.EditRole)
+        elif index.column() == 2:
+            new_priority = editor.currentText()
+            model.setData(index, new_priority, Qt.EditRole)
         else:
             super().setModelData(editor, model, index)
 
@@ -98,7 +110,8 @@ class TaskPanel(QWidget):
         button_layout.addWidget(import_text_button)
         layout.addLayout(button_layout)
 
-        self.task_tree.setItemDelegateForColumn(1, StatusDelegate(self.task_tree))
+        self.task_tree.setItemDelegateForColumn(1, TaskDelegate(self.task_tree))
+        self.task_tree.setItemDelegateForColumn(2, TaskDelegate(self.task_tree))
 
         self.load_tasks()
 
