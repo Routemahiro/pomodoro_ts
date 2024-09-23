@@ -20,7 +20,7 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit
 from PySide6.QtCore import Qt, QDate, QTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
@@ -86,10 +86,16 @@ class TaskPanel(QWidget):
         button_layout = QHBoxLayout()
         add_task_button = create_button("タスク追加", style_class="primary")
         add_task_button.clicked.connect(self.add_task)
+
         delete_task_button = create_button("タスク削除", style_class="secondary")
         delete_task_button.clicked.connect(self.delete_task)
+
+        import_text_button = create_button("テキストインポート", style_class="secondary")
+        import_text_button.clicked.connect(self.show_text_import_widget)
+
         button_layout.addWidget(add_task_button)
         button_layout.addWidget(delete_task_button)
+        button_layout.addWidget(import_text_button)
         layout.addLayout(button_layout)
 
         self.task_tree.setItemDelegateForColumn(1, StatusDelegate(self.task_tree))
@@ -230,6 +236,58 @@ class TaskPanel(QWidget):
                 self.task_manager.update_task_due_date(task_id, new_due_date)
             except ValueError:
                 pass  # 無効な日付形式の場合は無視
+
+    def show_text_import_widget(self):
+        # テキストインポートウィジェットを作成
+        self.import_widget = QWidget()
+        import_layout = QVBoxLayout(self.import_widget)
+
+        self.text_edit = QTextEdit()
+        import_layout.addWidget(self.text_edit)
+
+        button_layout = QHBoxLayout()
+        send_button = create_button("送信", style_class="primary")
+        cancel_button = create_button("キャンセル", style_class="secondary")
+        send_button.clicked.connect(self.import_tasks_from_text)
+        cancel_button.clicked.connect(self.hide_text_import_widget)
+        button_layout.addWidget(send_button)
+        button_layout.addWidget(cancel_button)
+        import_layout.addLayout(button_layout)
+
+        # サンプルテキストを表示
+        sample_label = QLabel("＜タスク追加用テキストサンプル＞\n- タスク1\n  - サブタスク1\n  - サブタスク2\n- タスク2")
+        import_layout.addWidget(sample_label)
+
+        self.layout().addWidget(self.import_widget)
+
+    def hide_text_import_widget(self):
+        # テキストインポートウィジェットを削除
+        self.import_widget.setParent(None)
+        self.import_widget = None
+
+    def import_tasks_from_text(self):
+        text = self.text_edit.toPlainText()
+        self.parse_and_add_tasks(text)
+        self.hide_text_import_widget()
+        self.load_tasks()
+
+    def parse_and_add_tasks(self, text):
+        lines = text.splitlines()
+        parent_ids = {0: None}
+
+        for line in lines:
+            stripped_line = line.lstrip()
+            if not stripped_line:
+                continue
+            indent = len(line) - len(stripped_line)
+            level = indent // 2  # スペース2つで1レベルとする
+
+            task_title = stripped_line.lstrip('-').strip()
+            parent_level = level - 1 if level > 0 else 0
+            parent_id = parent_ids.get(parent_level, None)
+
+            task_id = self.task_manager.create_task(task_title, parent_id=parent_id)
+            parent_ids[level] = task_id
 
 
 class CustomTreeWidgetItem(QTreeWidgetItem):
