@@ -42,6 +42,10 @@ class TaskPanel(QWidget):
         self.task_tree.setHeaderLabels(["タスク", "状態", "優先度", "期限"])
         self.task_tree.setDragDropMode(QTreeWidget.InternalMove)
         self.task_tree.itemChanged.connect(self.on_task_changed)
+
+        # ソートを有効にする
+        self.task_tree.setSortingEnabled(True)
+
         layout.addWidget(self.task_tree)
 
         # カラムの幅を設定
@@ -70,9 +74,18 @@ class TaskPanel(QWidget):
 
     def add_task_to_tree(self, task, parent_item):
         due_date = task.due_date.strftime("%Y-%m-%d %H:%M") if task.due_date else ""
-        item = QTreeWidgetItem(parent_item, [task.title, task.status, task.priority.value, due_date])
+        item = CustomTreeWidgetItem(parent_item, [task.title, task.status, task.priority.value, due_date])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         item.setData(0, Qt.UserRole, task.id)
+
+        # 優先度のソート用の値を設定
+        priority_sort_value = {"高": 0, "中": 1, "低": 2}
+        item.setData(2, Qt.UserRole + 1, priority_sort_value.get(task.priority.value, 3))
+
+        # 期限のソート用の値を設定
+        due_date_sort_value = task.due_date.timestamp() if task.due_date else float('inf')
+        item.setData(3, Qt.UserRole + 1, due_date_sort_value)
+
         for subtask in task.subtasks:
             self.add_task_to_tree(subtask, item)
 
@@ -183,3 +196,16 @@ class TaskPanel(QWidget):
                 self.task_manager.update_task_due_date(task_id, new_due_date)
             except ValueError:
                 pass  # 無効な日付形式の場合は無視
+
+
+class CustomTreeWidgetItem(QTreeWidgetItem):
+    def __lt__(self, other):
+        column = self.treeWidget().sortColumn()
+        data1 = self.data(column, Qt.UserRole + 1)
+        data2 = other.data(column, Qt.UserRole + 1)
+
+        if data1 is not None and data2 is not None:
+            return data1 < data2
+        else:
+            # 比較できない場合はテキストとして比較
+            return self.text(column) < other.text(column)
