@@ -48,8 +48,14 @@ class Task:
 
     @classmethod
     def from_dict(cls, data):
-        if 'priority' in data:
+        if 'priority' in data and data['priority']:
             data['priority'] = TaskPriority(data['priority'])
+        else:
+            data['priority'] = TaskPriority.LOW
+        if 'due_date' in data and data['due_date']:
+            data['due_date'] = datetime.strptime(data['due_date'], '%Y-%m-%d %H:%M:%S')
+        else:
+            data['due_date'] = None
         subtasks = data.pop('subtasks', [])
         task = cls(**data)
         task.subtasks = [cls.from_dict(subtask) for subtask in subtasks]
@@ -61,11 +67,19 @@ class TaskManager:
 
     def create_task(self, task: Task) -> int:
         query = '''
-            INSERT INTO tasks (title, description, status, parent_id, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO tasks (title, description, status, parent_id, created_at, updated_at, priority, due_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         '''
-        params = (task.title, task.description, task.status, task.parent_id,
-                  task.created_at, task.updated_at)
+        params = (
+            task.title,
+            task.description,
+            task.status,
+            task.parent_id,
+            task.created_at,
+            task.updated_at,
+            task.priority.value,
+            task.due_date.strftime("%Y-%m-%d %H:%M:%S") if task.due_date else None
+        )
         task_id = self.database.execute_insert(query, params)
         self._add_task_history(task_id, task.status)
         return task_id
@@ -81,11 +95,19 @@ class TaskManager:
         old_task = self.get_task(task.id)
         query = '''
             UPDATE tasks
-            SET title = ?, description = ?, status = ?, parent_id = ?, updated_at = ?
+            SET title = ?, description = ?, status = ?, parent_id = ?, updated_at = ?, priority = ?, due_date = ?
             WHERE id = ?
         '''
-        params = (task.title, task.description, task.status, task.parent_id,
-                  datetime.now(), task.id)
+        params = (
+            task.title,
+            task.description,
+            task.status,
+            task.parent_id,
+            datetime.now(),
+            task.priority.value,
+            task.due_date.strftime("%Y-%m-%d %H:%M:%S") if task.due_date else None,
+            task.id
+        )
         updated = self.database.execute_update(query, params) > 0
         if updated and old_task and old_task.status != task.status:
             self._add_task_history(task.id, task.status)
