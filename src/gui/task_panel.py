@@ -255,7 +255,15 @@ class TaskPanel(QWidget):
         import_layout.addLayout(button_layout)
 
         # サンプルテキストを表示
-        sample_label = QLabel("＜タスク追加用テキストサンプル＞\n- タスク1\n  - サブタスク1\n  - サブタスク2\n- タスク2")
+        sample_text = (
+            "＜タスク追加用テキストサンプル＞\n"
+            "- タスク1 @高 @2023-10-31\n"
+            "  - サブタスク1 @中 @2023-10-25\n"
+            "  - サブタスク2 @低\n"
+            "- タスク2 @中"
+        )
+        sample_label = QLabel(sample_text)
+        sample_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         import_layout.addWidget(sample_label)
 
         self.layout().addWidget(self.import_widget)
@@ -282,11 +290,34 @@ class TaskPanel(QWidget):
             indent = len(line) - len(stripped_line)
             level = indent // 2  # スペース2つで1レベルとする
 
-            task_title = stripped_line.lstrip('-').strip()
+            # 期限と優先度を解析
+            tokens = stripped_line.split()
+            task_title_parts = []
+            priority = TaskPriority.LOW  # デフォルト値
+            due_date = None
+
+            for token in tokens:
+                if token.startswith('@'):
+                    if token[1:] in [p.value for p in TaskPriority]:
+                        priority = TaskPriority(token[1:])
+                    else:
+                        try:
+                            due_date = datetime.strptime(token[1:], "%Y-%m-%d")
+                        except ValueError:
+                            pass  # 無効な形式は無視
+                else:
+                    task_title_parts.append(token)
+
+            task_title = ' '.join(task_title_parts)
             parent_level = level - 1 if level > 0 else 0
             parent_id = parent_ids.get(parent_level, None)
 
-            task_id = self.task_manager.create_task(task_title, parent_id=parent_id)
+            task_id = self.task_manager.create_task(
+                title=task_title,
+                parent_id=parent_id,
+                priority=priority,
+                due_date=due_date
+            )
             parent_ids[level] = task_id
 
 
@@ -299,5 +330,5 @@ class CustomTreeWidgetItem(QTreeWidgetItem):
         if data1 is not None and data2 is not None:
             return data1 < data2
         else:
-            # 比較できない場合はテキストとして比較
+            # 比較できない場合は文字列として比較
             return self.text(column) < other.text(column)
