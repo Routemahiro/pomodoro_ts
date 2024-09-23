@@ -282,13 +282,20 @@ class TaskPanel(QWidget):
     def parse_and_add_tasks(self, text):
         lines = text.splitlines()
         parent_ids = {0: None}
+        indent_levels = []
 
         for line in lines:
-            stripped_line = line.lstrip()
-            if not stripped_line:
+            if not line.strip():
                 continue
-            indent = len(line) - len(stripped_line)
-            level = indent // 2  # スペース2つで1レベルとする
+
+            # インデントの計算（スペースやタブを含む）
+            stripped_line = line.lstrip()
+            indent_str = line[:len(line) - len(stripped_line)]
+            indent = len(indent_str)
+
+            # 行頭の '-' を削除
+            if stripped_line.startswith('-'):
+                stripped_line = stripped_line[1:].lstrip()
 
             # 期限と優先度を解析
             tokens = stripped_line.split()
@@ -309,8 +316,16 @@ class TaskPanel(QWidget):
                     task_title_parts.append(token)
 
             task_title = ' '.join(task_title_parts)
-            parent_level = level - 1 if level > 0 else 0
-            parent_id = parent_ids.get(parent_level, None)
+
+            # レベルの計算
+            while indent_levels and indent < indent_levels[-1]:
+                indent_levels.pop()
+
+            if not indent_levels or indent > indent_levels[-1]:
+                indent_levels.append(indent)
+
+            level = len(indent_levels) - 1
+            parent_id = parent_ids.get(level - 1, None)
 
             task_id = self.task_manager.create_task(
                 title=task_title,
