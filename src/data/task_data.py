@@ -27,12 +27,18 @@ class TaskPriority(Enum):
     MEDIUM = "中"
     LOW = "低"
 
+class TaskStatus(Enum):
+    NOT_STARTED = "未着手"
+    IN_PROGRESS = "着手"
+    ON_HOLD = "保留"
+    COMPLETED = "完了"
+
 @dataclass
 class Task:
     id: Optional[int] = None
     title: str = ""
     description: str = ""
-    status: str = "未着手"
+    status: TaskStatus = TaskStatus.NOT_STARTED  # デフォルトを変更
     parent_id: Optional[int] = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
@@ -43,6 +49,7 @@ class Task:
     def to_dict(self):
         task_dict = asdict(self)
         task_dict['priority'] = self.priority.value
+        task_dict['status'] = self.status.value  # 状態を文字列に変換
         task_dict['subtasks'] = [subtask.to_dict() for subtask in self.subtasks]
         return task_dict
 
@@ -56,6 +63,10 @@ class Task:
             data['due_date'] = datetime.strptime(data['due_date'], '%Y-%m-%d %H:%M:%S')
         else:
             data['due_date'] = None
+        if 'status' in data and data['status']:
+            data['status'] = TaskStatus(data['status'])
+        else:
+            data['status'] = TaskStatus.NOT_STARTED
         subtasks = data.pop('subtasks', [])
         task = cls(**data)
         task.subtasks = [cls.from_dict(subtask) for subtask in subtasks]
@@ -73,7 +84,7 @@ class TaskManager:
         params = (
             task.title,
             task.description,
-            task.status,
+            task.status.value,
             task.parent_id,
             task.created_at,
             task.updated_at,
@@ -81,7 +92,7 @@ class TaskManager:
             task.due_date.strftime("%Y-%m-%d %H:%M:%S") if task.due_date else None
         )
         task_id = self.database.execute_insert(query, params)
-        self._add_task_history(task_id, task.status)
+        self._add_task_history(task_id, task.status.value)
         return task_id
 
     def get_task(self, task_id: int) -> Optional[Task]:
@@ -101,7 +112,7 @@ class TaskManager:
         params = (
             task.title,
             task.description,
-            task.status,
+            task.status.value,
             task.parent_id,
             datetime.now(),
             task.priority.value,
@@ -110,7 +121,7 @@ class TaskManager:
         )
         updated = self.database.execute_update(query, params) > 0
         if updated and old_task and old_task.status != task.status:
-            self._add_task_history(task.id, task.status)
+            self._add_task_history(task.id, task.status.value)
         return updated
 
     def delete_task(self, task_id: int) -> bool:

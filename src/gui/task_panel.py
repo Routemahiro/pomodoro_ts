@@ -20,12 +20,40 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate
 from PySide6.QtCore import Qt, QDate, QTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime, timedelta
-from src.data.task_data import TaskPriority
+from src.data.task_data import TaskPriority, TaskStatus
+
+
+class StatusDelegate(QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.statuses = [status.value for status in TaskStatus]
+
+    def createEditor(self, parent, option, index):
+        if index.column() == 1:  # 状態列
+            combo = QComboBox(parent)
+            combo.addItems(self.statuses)
+            return combo
+        return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        if index.column() == 1:
+            current_text = index.data(Qt.EditRole)
+            idx = self.statuses.index(current_text) if current_text in self.statuses else 0
+            editor.setCurrentIndex(idx)
+        else:
+            super().setEditorData(editor, index)
+
+    def setModelData(self, editor, model, index):
+        if index.column() == 1:
+            new_status = editor.currentText()
+            model.setData(index, new_status, Qt.EditRole)
+        else:
+            super().setModelData(editor, model, index)
 
 
 class TaskPanel(QWidget):
@@ -64,6 +92,8 @@ class TaskPanel(QWidget):
         button_layout.addWidget(delete_task_button)
         layout.addLayout(button_layout)
 
+        self.task_tree.setItemDelegateForColumn(1, StatusDelegate(self.task_tree))
+
         self.load_tasks()
 
     def load_tasks(self):
@@ -74,7 +104,7 @@ class TaskPanel(QWidget):
 
     def add_task_to_tree(self, task, parent_item):
         due_date = task.due_date.strftime("%Y-%m-%d %H:%M") if task.due_date else ""
-        item = CustomTreeWidgetItem(parent_item, [task.title, task.status, task.priority.value, due_date])
+        item = CustomTreeWidgetItem(parent_item, [task.title, task.status.value, task.priority.value, due_date])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
         item.setData(0, Qt.UserRole, task.id)
 
@@ -85,6 +115,10 @@ class TaskPanel(QWidget):
         # 期限のソート用の値を設定
         due_date_sort_value = task.due_date.timestamp() if task.due_date else float('inf')
         item.setData(3, Qt.UserRole + 1, due_date_sort_value)
+
+        # 状態のソート用の値を設定
+        status_sort_value = {"未着手": 0, "着手": 1, "保留": 2, "完了": 3}
+        item.setData(1, Qt.UserRole + 1, status_sort_value.get(task.status.value, 4))
 
         for subtask in task.subtasks:
             self.add_task_to_tree(subtask, item)
@@ -184,7 +218,7 @@ class TaskPanel(QWidget):
             new_title = item.text(0)
             self.task_manager.update_task_title(task_id, new_title)
         elif column == 1:  # 状態が変更された場合
-            new_status = item.text(1)
+            new_status = TaskStatus(item.text(1))
             self.task_manager.update_task_status(task_id, new_status)
         elif column == 2:  # 優先度が変更された場合
             new_priority = TaskPriority(item.text(2))
