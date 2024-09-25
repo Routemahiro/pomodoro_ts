@@ -20,8 +20,8 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit
-from PySide6.QtCore import Qt, QDate, QTime
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit
+from PySide6.QtCore import Qt, QDate, QTime, QDateTime
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime, timedelta
@@ -33,6 +33,7 @@ class TaskDelegate(QStyledItemDelegate):
         super().__init__(parent)
         self.statuses = [status.value for status in TaskStatus]
         self.priorities = [priority.value for priority in TaskPriority]
+        self.date_format = "yyyy-MM-dd HH:mm"  # 日付フォーマットを定義
 
     def createEditor(self, parent, option, index):
         if index.column() == 1:  # 状態列
@@ -43,6 +44,12 @@ class TaskDelegate(QStyledItemDelegate):
             combo = QComboBox(parent)
             combo.addItems(self.priorities)
             return combo
+        elif index.column() == 3:  # 期限列
+            editor = QDateTimeEdit(parent)
+            editor.setDisplayFormat(self.date_format)
+            editor.setCalendarPopup(True)
+            editor.setDateTime(QDateTime.currentDateTime())
+            return editor
         return super().createEditor(parent, option, index)
 
     def setEditorData(self, editor, index):
@@ -54,6 +61,16 @@ class TaskDelegate(QStyledItemDelegate):
             current_text = index.data(Qt.EditRole)
             idx = self.priorities.index(current_text) if current_text in self.priorities else 0
             editor.setCurrentIndex(idx)
+        elif index.column() == 3:
+            date_str = index.data(Qt.EditRole)
+            if date_str:
+                date_time = QDateTime.fromString(date_str, self.date_format)
+                if date_time.isValid():
+                    editor.setDateTime(date_time)
+                else:
+                    editor.setDateTime(QDateTime.currentDateTime())
+            else:
+                editor.setDateTime(QDateTime.currentDateTime())
         else:
             super().setEditorData(editor, index)
 
@@ -64,6 +81,9 @@ class TaskDelegate(QStyledItemDelegate):
         elif index.column() == 2:
             new_priority = editor.currentText()
             model.setData(index, new_priority, Qt.EditRole)
+        elif index.column() == 3:
+            new_due_date = editor.dateTime().toString(self.date_format)
+            model.setData(index, new_due_date, Qt.EditRole)
         else:
             super().setModelData(editor, model, index)
 
@@ -94,6 +114,12 @@ class TaskPanel(QWidget):
         self.task_tree.setColumnWidth(2, 75)  # 優先度
         self.task_tree.setColumnWidth(3, 150)  # 期限
 
+        # TaskDelegateを適用
+        task_delegate = TaskDelegate(self.task_tree)
+        self.task_tree.setItemDelegateForColumn(1, task_delegate)
+        self.task_tree.setItemDelegateForColumn(2, task_delegate)
+        self.task_tree.setItemDelegateForColumn(3, task_delegate)
+
         # ボタン
         button_layout = QHBoxLayout()
         add_task_button = create_button("タスク追加", style_class="primary")
@@ -109,9 +135,6 @@ class TaskPanel(QWidget):
         button_layout.addWidget(delete_task_button)
         button_layout.addWidget(import_text_button)
         layout.addLayout(button_layout)
-
-        self.task_tree.setItemDelegateForColumn(1, TaskDelegate(self.task_tree))
-        self.task_tree.setItemDelegateForColumn(2, TaskDelegate(self.task_tree))
 
         self.load_tasks()
 
@@ -249,6 +272,20 @@ class TaskPanel(QWidget):
                 self.task_manager.update_task_due_date(task_id, new_due_date)
             except ValueError:
                 pass  # 無効な日付形式の場合は無視
+
+        # ソート用の値を更新
+        if column == 1:
+            status_sort_value = {"未着手": 0, "着手": 1, "保留": 2, "完了": 3}
+            item.setData(1, Qt.UserRole + 1, status_sort_value.get(item.text(1), 4))
+        elif column == 2:
+            priority_sort_value = {"高": 0, "中": 1, "低": 2}
+            item.setData(2, Qt.UserRole + 1, priority_sort_value.get(item.text(2), 3))
+        elif column == 3:
+            due_date = datetime.strptime(item.text(3), "%Y-%m-%d %H:%M") if item.text(3) else None
+            due_date_sort_value = due_date.timestamp() if due_date else float('inf')
+            item.setData(3, Qt.UserRole + 1, due_date_sort_value)
+
+        self.task_tree.sortItems(column, Qt.AscendingOrder)
 
     def show_text_import_widget(self):
         # テキストインポートウィジェットを作成
