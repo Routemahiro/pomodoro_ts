@@ -318,6 +318,16 @@ class TaskPanel(QWidget):
         self.task_generation_edit = QTextEdit()
         left_layout.addWidget(self.task_generation_edit)
 
+        # 最終期限入力用のレイアウト
+        deadline_layout = QHBoxLayout()
+        deadline_label = QLabel("最終期限：")
+        self.deadline_edit = QDateTimeEdit()
+        self.deadline_edit.setCalendarPopup(True)  # カレンダーポップアップを有効化
+        self.deadline_edit.setDateTime(QDateTime.currentDateTime())  # 現在の日時をデフォルトに設定
+        deadline_layout.addWidget(deadline_label)
+        deadline_layout.addWidget(self.deadline_edit)
+        left_layout.addLayout(deadline_layout)
+
         # タスク生成ボタン
         generate_button = create_button("タスク生成", style_class="primary")
         generate_button.clicked.connect(self.generate_task_suggestions)
@@ -355,6 +365,17 @@ class TaskPanel(QWidget):
         right_layout.addWidget(sample_label)
 
         self.layout().addWidget(self.import_widget)
+
+    def generate_task_suggestions(self):
+        # タスク生成ロジックをここに実装
+        input_text = self.task_generation_edit.toPlainText()
+        deadline = self.deadline_edit.dateTime().toString("yyyy-MM-dd HH:mm")
+        # ここでAIを使ってタスクの細分化を行う
+        # 結果を self.text_edit に設定する
+        # 例：
+        # generated_tasks = ai_generate_tasks(input_text, deadline)
+        # self.text_edit.setPlainText(generated_tasks)
+        pass
 
     def generate_task_suggestions(self):
         # タスク生成ロジックをここに実装
