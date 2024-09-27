@@ -20,8 +20,9 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip
-from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip, QStyleOptionViewItem
+from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent, QPoint
+
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime, timedelta
@@ -152,10 +153,16 @@ class TaskPanel(QWidget):
     def eventFilter(self, source, event):
         if source == self.task_tree and event.type() == QEvent.ToolTip:
             pos = event.pos()
-            item = self.task_tree.itemAt(pos)
-            if item:
-                QToolTip.showText(event.globalPos(), item.text(0))
-                return True
+            # アイテムの高さを取得
+            item_height = self.task_tree.visualItemRect(self.task_tree.topLevelItem(0)).height()
+            # マウス位置を上に調整（アイテムの高さ分）
+            adjusted_pos = pos - QPoint(0, item_height)
+            index = self.task_tree.indexAt(adjusted_pos)
+            if index.isValid():
+                item = self.task_tree.itemFromIndex(index)
+                if item:
+                    QToolTip.showText(event.globalPos(), item.text(0))
+                    return True
         return super().eventFilter(source, event)
 
     def load_tasks(self):
