@@ -140,7 +140,7 @@ class TaskPanel(QWidget):
         delete_task_button = create_button("タスク削除", style_class="secondary")
         delete_task_button.clicked.connect(self.delete_task)
 
-        import_text_button = create_button("テキストインポート", style_class="secondary")
+        import_text_button = create_button("インポート", style_class="secondary")
         import_text_button.clicked.connect(self.show_text_import_widget)
 
         button_layout.addWidget(add_task_button)
