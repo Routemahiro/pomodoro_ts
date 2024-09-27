@@ -109,9 +109,9 @@ class TaskPanel(QWidget):
         layout.addWidget(self.task_tree)
 
         # カラムの幅を設定
-        self.task_tree.setColumnWidth(0, 200)  # タスク
-        self.task_tree.setColumnWidth(1, 90)  # 状態
-        self.task_tree.setColumnWidth(2, 75)  # 優先度
+        self.task_tree.setColumnWidth(0, 180)  # タスク
+        self.task_tree.setColumnWidth(1, 75)  # 状態
+        self.task_tree.setColumnWidth(2, 60)  # 優先度
         self.task_tree.setColumnWidth(3, 150)  # 期限
 
         # TaskDelegateを適用
