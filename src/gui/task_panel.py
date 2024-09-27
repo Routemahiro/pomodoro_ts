@@ -95,14 +95,6 @@ class TaskPanel(QWidget):
         self.task_manager = task_manager
         self.setup_ui()
 
-
-
-class TaskPanel(QWidget):
-    def __init__(self, task_manager: TaskManager):
-        super().__init__()
-        self.task_manager = task_manager
-        self.setup_ui()
-
     def setup_ui(self):
         layout = QVBoxLayout(self)
 
@@ -315,7 +307,7 @@ class TaskPanel(QWidget):
         self.task_tree.sortItems(column, Qt.AscendingOrder)
 
     def show_text_import_widget(self):
-        # テキストインポートウィジェットを作成
+        # タスクインポートウィジェットを作成
         self.import_widget = QWidget()
         import_layout = QVBoxLayout(self.import_widget)
 
@@ -346,7 +338,7 @@ class TaskPanel(QWidget):
         self.layout().addWidget(self.import_widget)
 
     def hide_text_import_widget(self):
-        # テキストインポートウィジェットを削除
+        # タスクインポートウィジェットを削除
         self.import_widget.setParent(None)
         self.import_widget = None
 
