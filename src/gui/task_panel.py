@@ -20,8 +20,8 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit
-from PySide6.QtCore import Qt, QDate, QTime, QDateTime
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip
+from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime, timedelta
@@ -94,6 +94,14 @@ class TaskPanel(QWidget):
         self.task_manager = task_manager
         self.setup_ui()
 
+
+
+class TaskPanel(QWidget):
+    def __init__(self, task_manager: TaskManager):
+        super().__init__()
+        self.task_manager = task_manager
+        self.setup_ui()
+
     def setup_ui(self):
         layout = QVBoxLayout(self)
 
@@ -120,6 +128,9 @@ class TaskPanel(QWidget):
         self.task_tree.setItemDelegateForColumn(2, task_delegate)
         self.task_tree.setItemDelegateForColumn(3, task_delegate)
 
+        # タスクツリーにイベントフィルターを追加
+        self.task_tree.installEventFilter(self)
+
         # ボタン
         button_layout = QHBoxLayout()
         add_task_button = create_button("タスク追加", style_class="primary")
@@ -137,6 +148,15 @@ class TaskPanel(QWidget):
         layout.addLayout(button_layout)
 
         self.load_tasks()
+
+    def eventFilter(self, source, event):
+        if source == self.task_tree and event.type() == QEvent.ToolTip:
+            pos = event.pos()
+            item = self.task_tree.itemAt(pos)
+            if item:
+                QToolTip.showText(event.globalPos(), item.text(0))
+                return True
+        return super().eventFilter(source, event)
 
     def load_tasks(self):
         self.task_tree.clear()
