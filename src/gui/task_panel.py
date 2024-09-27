@@ -132,12 +132,12 @@ class TaskPanel(QWidget):
         delete_task_button = create_button("タスク削除", style_class="secondary")
         delete_task_button.clicked.connect(self.delete_task)
 
-        import_text_button = create_button("インポート", style_class="secondary")
-        import_text_button.clicked.connect(self.show_text_import_widget)
+        import_task_button = create_button("タスクインポート", style_class="secondary")
+        import_task_button.clicked.connect(self.show_text_import_widget)
 
         button_layout.addWidget(add_task_button)
         button_layout.addWidget(delete_task_button)
-        button_layout.addWidget(import_text_button)
+        button_layout.addWidget(import_task_button)
         layout.addLayout(button_layout)
 
         self.load_tasks()
@@ -309,19 +309,38 @@ class TaskPanel(QWidget):
     def show_text_import_widget(self):
         # タスクインポートウィジェットを作成
         self.import_widget = QWidget()
-        import_layout = QVBoxLayout(self.import_widget)
+        import_layout = QHBoxLayout(self.import_widget)
 
+        # 左半分のレイアウト
+        left_layout = QVBoxLayout()
+        
+        # タスク生成用のテキスト入力枠
+        self.task_generation_edit = QTextEdit()
+        left_layout.addWidget(self.task_generation_edit)
+
+        # タスク生成ボタン
+        generate_button = create_button("タスク生成", style_class="primary")
+        generate_button.clicked.connect(self.generate_task_suggestions)
+        left_layout.addWidget(generate_button)
+
+        import_layout.addLayout(left_layout)
+
+        # 右半分のレイアウト
+        right_layout = QVBoxLayout()
+
+        # インポート用のテキスト入力枠
         self.text_edit = QTextEdit()
-        import_layout.addWidget(self.text_edit)
+        right_layout.addWidget(self.text_edit)
 
-        button_layout = QHBoxLayout()
+        # 送信とキャンセルボタンを縦並びに
         send_button = create_button("送信", style_class="primary")
         cancel_button = create_button("キャンセル", style_class="secondary")
         send_button.clicked.connect(self.import_tasks_from_text)
         cancel_button.clicked.connect(self.hide_text_import_widget)
-        button_layout.addWidget(send_button)
-        button_layout.addWidget(cancel_button)
-        import_layout.addLayout(button_layout)
+        right_layout.addWidget(send_button)
+        right_layout.addWidget(cancel_button)
+
+        import_layout.addLayout(right_layout)
 
         # サンプルテキストを表示
         sample_text = (
@@ -333,9 +352,19 @@ class TaskPanel(QWidget):
         )
         sample_label = QLabel(sample_text)
         sample_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        import_layout.addWidget(sample_label)
+        right_layout.addWidget(sample_label)
 
         self.layout().addWidget(self.import_widget)
+
+    def generate_task_suggestions(self):
+        # タスク生成ロジックをここに実装
+        input_text = self.task_generation_edit.toPlainText()
+        # ここでAIを使ってタスクの細分化を行う
+        # 結果を self.text_edit に設定する
+        # 例：
+        # generated_tasks = ai_generate_tasks(input_text)
+        # self.text_edit.setPlainText(generated_tasks)
+        pass
 
     def hide_text_import_widget(self):
         # タスクインポートウィジェットを削除
