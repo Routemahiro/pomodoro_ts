@@ -32,7 +32,6 @@ class AIInterface:
         self.ai_conversation_manager = ai_conversation_manager
         encryption_key = self.config.get('encryption_key')
         if encryption_key is None:
-            # キーがない場合は新しく生成
             encryption_key = Fernet.generate_key().decode()
             self.config.set('encryption_key', encryption_key)
         self.fernet = Fernet(encryption_key.encode())
@@ -40,11 +39,17 @@ class AIInterface:
         self.api_url = "https://api.openai.com/v1/chat/completions"
 
     def _get_decrypted_api_key(self):
+        if self.encrypted_api_key is None:
+            return None
         return self.fernet.decrypt(self.encrypted_api_key.encode()).decode()
 
     def send_message(self, message: str) -> str:
+        api_key = self._get_decrypted_api_key()
+        if api_key is None:
+            return "APIキーが未設定です。OpenAI APIキーを設定してください。"
+
         headers = {
-            "Authorization": f"Bearer {self._get_decrypted_api_key()}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         data = {
