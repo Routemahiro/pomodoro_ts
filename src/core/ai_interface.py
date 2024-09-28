@@ -30,18 +30,26 @@ class AIInterface:
     def __init__(self, config, ai_conversation_manager: AIConversationManager):
         self.config = config
         self.ai_conversation_manager = ai_conversation_manager
-        encryption_key = self.config.get('encryption_key')
-        if encryption_key is None:
-            encryption_key = Fernet.generate_key().decode()
-            self.config.set('encryption_key', encryption_key)
-        self.fernet = Fernet(encryption_key.encode())
-        self.encrypted_api_key = self.config.get('encrypted_openai_api_key')
         self.api_url = "https://api.openai.com/v1/chat/completions"
 
     def _get_decrypted_api_key(self):
-        if self.encrypted_api_key is None:
+        encryption_key = self.config.get('encryption_key')
+        if encryption_key is None:
+            print("暗号化キーが設定されていません。")
             return None
-        return self.fernet.decrypt(self.encrypted_api_key.encode()).decode()
+
+        encrypted_api_key = self.config.get('encrypted_openai_api_key')
+        if encrypted_api_key is None:
+            print("暗号化されたAPIキーが設定されていません。")
+            return None
+
+        try:
+            fernet = Fernet(encryption_key.encode())
+            decrypted_key = fernet.decrypt(encrypted_api_key.encode()).decode()
+            return decrypted_key
+        except Exception as e:
+            print(f"APIキーの復号化中にエラーが発生しました: {e}")
+            return None
 
     def send_message(self, message: str) -> str:
         api_key = self._get_decrypted_api_key()
