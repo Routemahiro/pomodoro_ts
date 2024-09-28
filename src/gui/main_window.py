@@ -44,13 +44,14 @@ from src.utils.ui_helpers import create_button, load_stylesheet
 from src.core.timer import TimerState, TimerType  # この行を修正
 
 class MainWindow(QMainWindow):
-    def __init__(self, timer, session_manager, task_manager, ai_interface, config):
+    def __init__(self, timer, session_manager, task_manager, ai_interface, config, ai_conversation_manager):
         super().__init__()
         self.timer = timer
         self.session_manager = session_manager
         self.task_manager = task_manager
         self.ai_interface = ai_interface
         self.config = config
+        self.ai_conversation_manager = ai_conversation_manager
 
         self.central_widget = QWidget()
         self.central_widget.setAttribute(Qt.WA_TranslucentBackground)
@@ -200,7 +201,7 @@ class MainWindow(QMainWindow):
 
         # スライドパネル
         self.slide_panel = SlidePanel(self)
-        self.task_panel = TaskPanel(self.task_manager)
+        self.task_panel = TaskPanel(self.task_manager, self.config, self.ai_conversation_manager)
         self.ai_chat_panel = AIChatPanel(self.ai_interface, self.task_manager)
         self.dashboard_widget = DashboardWidget(self.session_manager, self.task_manager)
         self.slide_panel.add_panel("Tasks", self.task_panel)

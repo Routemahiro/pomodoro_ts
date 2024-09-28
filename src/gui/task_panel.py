@@ -27,7 +27,8 @@ from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
 from datetime import datetime, timedelta
 from src.data.task_data import TaskPriority, TaskStatus
-
+from src.core.ai_interface import AIInterface
+import os
 
 class TaskDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -90,9 +91,11 @@ class TaskDelegate(QStyledItemDelegate):
 
 
 class TaskPanel(QWidget):
-    def __init__(self, task_manager: TaskManager):
+    def __init__(self, task_manager: TaskManager, config, ai_conversation_manager):
         super().__init__()
         self.task_manager = task_manager
+        self.config = config
+        self.ai_conversation_manager = ai_conversation_manager
         self.setup_ui()
 
     def setup_ui(self):
@@ -376,15 +379,29 @@ class TaskPanel(QWidget):
         self.layout().addWidget(self.import_widget)
 
     def generate_task_suggestions(self):
-        # タスク生成ロジックをここに実装
         input_text = self.task_generation_edit.toPlainText()
-        deadline = self.deadline_edit.dateTime().toString("yyyy-MM-dd HH:mm")
-        # ここでAIを使ってタスクの細分化を行う
-        # 結果を self.text_edit に設定する
-        # 例：
-        # generated_tasks = ai_generate_tasks(input_text, deadline)
-        # self.text_edit.setPlainText(generated_tasks)
-        pass
+        deadline = self.deadline_edit.dateTime().toString("yyyy/MM/dd HH:mm")
+        current_time = datetime.now().strftime("%Y/%m/%d %H:%M")
+
+        # generate_task.txtの内容を読み込む
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        generate_task_path = os.path.join(script_dir, '..', '..', 'data', 'generate_task.txt')
+        with open(generate_task_path, 'r', encoding='utf-8') as file:
+            prompt_template = file.read()
+
+        # プロンプトを作成
+        prompt = prompt_template.format(
+            input_text=input_text,
+            実行時の日時=current_time,
+            deadline=deadline
+        )
+
+        # AIインターフェースを使用してタスクを生成
+        ai_interface = AIInterface(self.config, self.ai_conversation_manager)
+        generated_tasks = ai_interface.send_message(prompt)
+
+        # 生成されたタスクをテキストエディタに設定
+        self.text_edit.setPlainText(generated_tasks)
 
     def hide_text_import_widget(self):
         # タスクインポートウィジェットを削除

@@ -79,7 +79,7 @@ def main():
     config.register_observer('long_break', lambda key, value: timer.update_settings(config))
 
     # メインウィンドウの作成と表示
-    main_window = MainWindow(timer, session_manager, task_manager, ai_interface, config)
+    main_window = MainWindow(timer, session_manager, task_manager, ai_interface, config, ai_conversation_manager)
     main_window.show()
 
     # アプリケーションの実行
