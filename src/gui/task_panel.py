@@ -399,9 +399,31 @@ class TaskPanel(QWidget):
         # AIインターフェースを使用してタスクを生成
         ai_interface = AIInterface(self.config, self.ai_conversation_manager)
         generated_tasks = ai_interface.send_message(prompt, model="gpt-4-turbo",include_history=False)
+        prompt2 = ("あなたは以下の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
+           + """【指定の形式】
+- タスク1 @高 @2023-10-30 12:20\n
+  - サブタスク1 @中 @2023-10-25 10:00\n 
+  - サブタスク2 @低 @2023-10-24 16:00\n
+- タスク2 @中 @2023-11-01 16:00\n\n"""
+           + generated_tasks)
+        
+        generated_tasks2 = ai_interface.send_message(prompt2, model="gpt-3.5-turbo",include_history=False)
+
+        prompt3 = "あなたは以下の文章とタスク内容を参考にして1行の短文に要約してください\n" 
+        + prompt + "\n" + generated_tasks2
+
+        summary = "- " + ai_interface.send_message(prompt3, model="gpt-3.5-turbo",include_history=False)
+
+# - サンゴ礁復旧計画
+#  - タスク1: サンゴ礁復旧計画の作成 @高 @2024-10-02 17:00
+#    - サブタスク1: 研究チームと協議し、必要なデータを収集 @高 @2024-10-01 17:00
+#    - サブタスク2: 目標地域の現状調査を行い、詳細な復旧計画を立てる @高 @2024-10-02 12:00
+# やりたいこと
 
         # 生成されたタスクをテキストエディタに設定
-        self.text_edit.setPlainText(generated_tasks)
+        self.text_edit.setPlainText(generated_tasks2)
+
+
 
     def hide_text_import_widget(self):
         # タスクインポートウィジェットを削除
