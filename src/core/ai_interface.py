@@ -25,8 +25,6 @@ from typing import List, Dict, Any
 from src.utils.config import config
 from src.data.ai_conversation import AIConversationManager
 from cryptography.fernet import Fernet
-from openai import OpenAI
-from pydantic import BaseModel
 
 class AIInterface:
     def __init__(self, config, ai_conversation_manager: AIConversationManager):
@@ -54,7 +52,7 @@ class AIInterface:
             print(f"APIキーの暗号化中にエラーが発生しました: {e}")
             return None
 
-    def send_message(self, message: str, model: str = "gpt-3.5-turbo") -> str:
+    def send_message(self, message: str, model: str = "gpt-3.5-turbo", include_history: bool = True) -> str:
         api_key = self._get_api_key()
         if api_key is None:
             return "APIキーが未設定だよ。OpenAI APIキーを設定してね。"
@@ -63,9 +61,15 @@ class AIInterface:
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
+        
+        messages = []
+        if include_history:
+            messages = self.ai_conversation_manager.get_conversation_history()
+        messages.append({"role": "user", "content": message})
+        
         data = {
             "model": model,
-            "messages": [{"role": "user", "content": message}]
+            "messages": messages
         }
 
         try:
@@ -75,8 +79,9 @@ class AIInterface:
             ai_response = result['choices'][0]['message']['content']
             
             # 会話履歴の保存
-            self.ai_conversation_manager.add_message(message, "user")
-            self.ai_conversation_manager.add_message(ai_response, "assistant")
+            if include_history:
+                self.ai_conversation_manager.add_message(message, "user")
+                self.ai_conversation_manager.add_message(ai_response, "assistant")
             
             return ai_response
         except requests.exceptions.RequestException as e:
@@ -88,32 +93,42 @@ class AIInterface:
         if api_key is None:
             return {"error": "APIキーが未設定だよ。OpenAI APIキーを設定してね。"}
 
-        client = OpenAI(api_key=api_key)
-
-        system_message = "You are a helpful assistant that always responds in the specified JSON format."
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant that always responds in the specified JSON format."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        data = {
+            "model": model,
+            "messages": messages,
+            "response_format": {"type": "json_object"}
+        }
 
         try:
-            completion = client.chat.completions.create(
-                model=model,
-                messages=[
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}
-            )
-
-            response_content = completion.choices[0].message.content
-            parsed_response = json.loads(response_content)
-
+            response = requests.post(self.api_url, headers=headers, json=data)
+            response.raise_for_status()
+            result = response.json()
+            ai_response = result['choices'][0]['message']['content']
+            
+            # JSON文字列をPythonオブジェクトに変換
+            parsed_response = json.loads(ai_response)
+            
             # 会話履歴の保存
             self.ai_conversation_manager.add_message(prompt, "user")
-            self.ai_conversation_manager.add_message(response_content, "assistant")
-
+            self.ai_conversation_manager.add_message(ai_response, "assistant")
+            
             return parsed_response
-
-        except Exception as e:
-            print(f"エラーが発生しちゃった: {e}")
+        except requests.exceptions.RequestException as e:
+            print(f"APIリクエスト中にエラーが発生しちゃった: {e}")
             return {"error": f"ごめんね。エラーが発生しちゃったよ: {str(e)}"}
+        except json.JSONDecodeError as e:
+            print(f"JSONのデコード中にエラーが発生しちゃった: {e}")
+            return {"error": "JSONの解析に失敗しちゃったよ。"}
 
     def analyze_tasks(self, task_description: str) -> List[Dict[str, str]]:
         prompt = f"以下のタスク説明を個別のサブタスクに分解してください。JSON形式で返答してください：\n{task_description}"
