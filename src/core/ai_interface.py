@@ -52,17 +52,17 @@ class AIInterface:
             print(f"APIキーの暗号化中にエラーが発生しました: {e}")
             return None
 
-    def send_message(self, message: str) -> str:
+    def send_message(self, message: str, model: str = "gpt-3.5-turbo") -> str:
         api_key = self._get_api_key()
         if api_key is None:
-            return "APIキーが未設定です。OpenAI APIキーを設定してください。"
+            return "APIキーが未設定だよ。OpenAI APIキーを設定してね。"
 
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json"
         }
         data = {
-            "model": "gpt-3.5-turbo",
+            "model": model,
             "messages": [{"role": "user", "content": message}]
         }
 
@@ -78,8 +78,8 @@ class AIInterface:
             
             return ai_response
         except requests.exceptions.RequestException as e:
-            print(f"APIリクエスト中にエラーが発生しました: {e}")
-            return "申し訳ありません。エラーが発生しました。"
+            print(f"APIリクエスト中にエラーが発生しちゃった: {e}")
+            return "ごめんね。エラーが発生しちゃったよ。"
 
     def analyze_tasks(self, task_description: str) -> List[Dict[str, str]]:
         prompt = f"以下のタスク説明を個別のサブタスクに分解してください。JSON形式で返答してください：\n{task_description}"
