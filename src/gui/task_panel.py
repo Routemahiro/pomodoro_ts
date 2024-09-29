@@ -398,7 +398,7 @@ class TaskPanel(QWidget):
 
         # AIインターフェースを使用してタスクを生成
         ai_interface = AIInterface(self.config, self.ai_conversation_manager)
-        generated_tasks = ai_interface.send_message(prompt, model="gpt-4-turbo")
+        generated_tasks = ai_interface.send_message(prompt, model="gpt-4-turbo",include_history=False)
 
         # 生成されたタスクをテキストエディタに設定
         self.text_edit.setPlainText(generated_tasks)

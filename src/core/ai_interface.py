@@ -21,10 +21,12 @@ AI (ChatGPT) とのインターフェース
 
 import requests
 import json
-from typing import List, Dict
+from typing import List, Dict, Any
 from src.utils.config import config
 from src.data.ai_conversation import AIConversationManager
 from cryptography.fernet import Fernet
+from openai import OpenAI
+from pydantic import BaseModel
 
 class AIInterface:
     def __init__(self, config, ai_conversation_manager: AIConversationManager):
@@ -80,6 +82,38 @@ class AIInterface:
         except requests.exceptions.RequestException as e:
             print(f"APIリクエスト中にエラーが発生しちゃった: {e}")
             return "ごめんね。エラーが発生しちゃったよ。"
+
+    def get_json_response(self, prompt: str, model: str = "gpt-3.5-turbo") -> Dict[str, Any]:
+        api_key = self._get_api_key()
+        if api_key is None:
+            return {"error": "APIキーが未設定だよ。OpenAI APIキーを設定してね。"}
+
+        client = OpenAI(api_key=api_key)
+
+        system_message = "You are a helpful assistant that always responds in the specified JSON format."
+
+        try:
+            completion = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"}
+            )
+
+            response_content = completion.choices[0].message.content
+            parsed_response = json.loads(response_content)
+
+            # 会話履歴の保存
+            self.ai_conversation_manager.add_message(prompt, "user")
+            self.ai_conversation_manager.add_message(response_content, "assistant")
+
+            return parsed_response
+
+        except Exception as e:
+            print(f"エラーが発生しちゃった: {e}")
+            return {"error": f"ごめんね。エラーが発生しちゃったよ: {str(e)}"}
 
     def analyze_tasks(self, task_description: str) -> List[Dict[str, str]]:
         prompt = f"以下のタスク説明を個別のサブタスクに分解してください。JSON形式で返答してください：\n{task_description}"
