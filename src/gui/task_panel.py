@@ -453,27 +453,35 @@ class TaskPanel(QWidget):
         generated_lines = generated_tasks.strip().split('\n')
         task_index = 0
 
-        def add_subtasks(task, indent):
-            nonlocal combined, task_index
-            for subtask in task.get('subtasks', []):
+        def add_task(line, indent):
+            nonlocal combined
+            stripped_line = line.lstrip()
+            if stripped_line.startswith('- '):
+                stripped_line = stripped_line[2:]
+            combined += "  " * indent + "- " + stripped_line + "\n"
+
+        def process_tasks(tasks, indent):
+            nonlocal task_index, combined
+            for task in tasks:
                 if task_index < len(generated_lines):
-                    combined += "  " * indent + generated_lines[task_index].strip() + "\n"
+                    current_line = generated_lines[task_index]
+                    current_indent = len(current_line) - len(current_line.lstrip())
+                    add_task(current_line, indent + (current_indent // 2))
                     task_index += 1
                 else:
-                    combined += "  " * indent + "- " + subtask['title'] + "\n"
-                add_subtasks(subtask, indent + 1)
+                    add_task(task['title'], indent)
+                process_tasks(task.get('subtasks', []), indent + 1)
 
-        for task in structured_tasks:
-            if task_index < len(generated_lines):
-                combined += generated_lines[task_index].strip() + "\n"
-                task_index += 1
-            else:
-                combined += "- " + task['title'] + "\n"
-            add_subtasks(task, 1)
+        # メインのタスクを追加
+        if structured_tasks:
+            add_task(structured_tasks[0]['title'], 0)
+            process_tasks(structured_tasks[0].get('subtasks', []), 1)
 
         # 残りの生成されたタスクを追加
         while task_index < len(generated_lines):
-            combined += generated_lines[task_index].strip() + "\n"
+            current_line = generated_lines[task_index]
+            current_indent = len(current_line) - len(current_line.lstrip())
+            add_task(current_line, 1 + (current_indent // 2))
             task_index += 1
 
         return combined
