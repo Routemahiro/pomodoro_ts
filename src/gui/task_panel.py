@@ -399,29 +399,84 @@ class TaskPanel(QWidget):
         # AIインターフェースを使用してタスクを生成
         ai_interface = AIInterface(self.config, self.ai_conversation_manager)
         generated_tasks = ai_interface.send_message(prompt, model="gpt-4-turbo",include_history=False)
-        prompt2 = ("あなたは以下の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
+        prompt2 = ("あなたは作業対象の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
            + """【指定の形式】
-- タスク1 @高 @2023-10-30 12:20\n
-  - サブタスク1 @中 @2023-10-25 10:00\n 
-  - サブタスク2 @低 @2023-10-24 16:00\n
-- タスク2 @中 @2023-11-01 16:00\n\n"""
+
+- {タスク1} @高 @2023-10-30 12:20\n
+  - {サブタスク1} @中 @2023-10-25 10:00\n 
+  - {サブタスク2} @低 @2023-10-24 16:00\n
+- {タスク2} @中 @2023-11-01 16:00\n【作業対象の文章】\n"""
            + generated_tasks)
         
         generated_tasks2 = ai_interface.send_message(prompt2, model="gpt-3.5-turbo",include_history=False)
 
-        prompt3 = "あなたは以下の文章とタスク内容を参考にして1行の短文に要約してください\n" 
-        + prompt + "\n" + generated_tasks2
+        # 入力テキストを基にタスクのツリー構造を作成
+        structured_tasks = self.create_task_structure(input_text)
 
-        summary = "- " + ai_interface.send_message(prompt3, model="gpt-3.5-turbo",include_history=False)
+        # 生成されたタスクとツリー構造を組み合わせる
+        combined_tasks = self.combine_tasks(generated_tasks2, structured_tasks)
 
-# - サンゴ礁復旧計画
-#  - タスク1: サンゴ礁復旧計画の作成 @高 @2024-10-02 17:00
-#    - サブタスク1: 研究チームと協議し、必要なデータを収集 @高 @2024-10-01 17:00
-#    - サブタスク2: 目標地域の現状調査を行い、詳細な復旧計画を立てる @高 @2024-10-02 12:00
-# やりたいこと
+        # 組み合わせたタスクをテキストエディタに設定
+        self.text_edit.setPlainText(combined_tasks)
 
-        # 生成されたタスクをテキストエディタに設定
-        self.text_edit.setPlainText(generated_tasks2)
+    def create_task_structure(self, input_text):
+        lines = input_text.strip().split('\n')
+        structured_tasks = []
+        current_indent = 0
+        current_task = None
+        task_stack = []
+
+        for line in lines:
+            stripped_line = line.strip()
+            if not stripped_line:
+                continue
+
+            indent = len(line) - len(line.lstrip())
+            if indent > current_indent:
+                task_stack.append(current_task)
+            elif indent < current_indent:
+                for _ in range((current_indent - indent) // 2):
+                    task_stack.pop()
+
+            current_task = {'title': stripped_line, 'subtasks': []}
+            if task_stack:
+                task_stack[-1]['subtasks'].append(current_task)
+            else:
+                structured_tasks.append(current_task)
+
+            current_indent = indent
+
+        return structured_tasks
+
+    def combine_tasks(self, generated_tasks, structured_tasks):
+        combined = ""
+        generated_lines = generated_tasks.strip().split('\n')
+        task_index = 0
+
+        def add_subtasks(task, indent):
+            nonlocal combined, task_index
+            for subtask in task.get('subtasks', []):
+                if task_index < len(generated_lines):
+                    combined += "  " * indent + generated_lines[task_index].strip() + "\n"
+                    task_index += 1
+                else:
+                    combined += "  " * indent + "- " + subtask['title'] + "\n"
+                add_subtasks(subtask, indent + 1)
+
+        for task in structured_tasks:
+            if task_index < len(generated_lines):
+                combined += generated_lines[task_index].strip() + "\n"
+                task_index += 1
+            else:
+                combined += "- " + task['title'] + "\n"
+            add_subtasks(task, 1)
+
+        # 残りの生成されたタスクを追加
+        while task_index < len(generated_lines):
+            combined += generated_lines[task_index].strip() + "\n"
+            task_index += 1
+
+        return combined
 
 
 
