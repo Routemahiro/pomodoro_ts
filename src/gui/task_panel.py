@@ -307,8 +307,6 @@ class TaskPanel(QWidget):
             due_date_sort_value = due_date.timestamp() if due_date else float('inf')
             item.setData(3, Qt.UserRole + 1, due_date_sort_value)
 
-        self.task_tree.sortItems(column, Qt.AscendingOrder)
-
     def show_text_import_widget(self):
         # タスクインポートウィジェットを作成
         self.import_widget = QWidget()
