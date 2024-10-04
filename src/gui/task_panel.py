@@ -398,14 +398,14 @@ class TaskPanel(QWidget):
 
         # AIインターフェースを使用してタスクを生成
         ai_interface = AIInterface(self.config, self.ai_conversation_manager)
-        generated_tasks = ai_interface.send_message(prompt, model="gpt-4-turbo",include_history=False)
+        generated_tasks = ai_interface.send_message(prompt, model="gpt-4o",include_history=False)
         prompt2 = ("あなたは作業対象の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
            + """【指定の形式】
 
-- {タスク1} @高 @2023-10-30 12:20\n
-  - {サブタスク1} @中 @2023-10-25 10:00\n 
-  - {サブタスク2} @低 @2023-10-24 16:00\n
-- {タスク2} @中 @2023-11-01 16:00\n【作業対象の文章】\n"""
+- {タスク1} @高 @2023-10-30\n
+  - {サブタスク1} @中 @2023-10-25\n 
+  - {サブタスク2} @低 @2023-10-24\n
+- {タスク2} @中 @2023-11-01\n【作業対象の文章】\n"""
            + generated_tasks)
         
         generated_tasks2 = ai_interface.send_message(prompt2, model="gpt-3.5-turbo",include_history=False)
@@ -458,7 +458,8 @@ class TaskPanel(QWidget):
             stripped_line = line.lstrip()
             if stripped_line.startswith('- '):
                 stripped_line = stripped_line[2:]
-            combined += "  " * indent + "- " + stripped_line + "\n"
+            if stripped_line:  # 空の行を追加しない
+                combined += "  " * indent + "- " + stripped_line + "\n"
 
         def process_tasks(tasks, indent):
             nonlocal task_index, combined
@@ -484,6 +485,9 @@ class TaskPanel(QWidget):
             add_task(current_line, 1 + (current_indent // 2))
             task_index += 1
 
+        # 空行を削除
+        combined = "\n".join(line for line in combined.split("\n") if line.strip())
+
         return combined
 
 
@@ -505,7 +509,8 @@ class TaskPanel(QWidget):
         indent_levels = []
 
         for line in lines:
-            if not line.strip():
+            # 空行または '-' のみの行をスキップ
+            if not line.strip() or line.strip() == '-':
                 continue
 
             # インデントの計算（スペースやタブを含む）
@@ -516,6 +521,10 @@ class TaskPanel(QWidget):
             # 行頭の '-' を削除
             if stripped_line.startswith('-'):
                 stripped_line = stripped_line[1:].lstrip()
+
+            # タイトルが空の場合はスキップ
+            if not stripped_line:
+                continue
 
             # 期限と優先度を解析
             tokens = stripped_line.split()
