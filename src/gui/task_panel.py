@@ -116,10 +116,10 @@ class TaskGenerationThread(QThread):
         prompt2 = ("あなたは作業対象の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
            + """【指定の形式】
 
-- {タスク1} @高 @2023-10-30\n
-  - {サブタスク1} @中 @2023-10-25\n 
-  - {サブタスク2} @低 @2023-10-24\n
-- {タスク2} @中 @2023-11-01\n【作業対象の文章】\n"""
+- タスク１：{タスク1} @高 @2023-10-30\n
+  - サブタスク１：{サブタスク1} @中 @2023-10-25\n 
+  - サブタスク２：{サブタスク2} @低 @2023-10-24\n
+- タスク２：{タスク2} @中 @2023-11-01\n【作業対象の文章】\n"""
            + generated_tasks)
         
         generated_tasks2 = self.ai_interface.send_message(prompt2, model="gpt-3.5-turbo", include_history=False)
@@ -435,10 +435,10 @@ class TaskPanel(QWidget):
         # サンプルテキストを表示
         sample_text = (
             "＜タスク追加用テキストサンプル＞\n"
-            "- タスク1 @高 @2023-10-31\n"
-            "  - サブタスク1 @中 @2023-10-25\n"
-            "  - サブタスク2 @低\n"
-            "- タスク2 @中"
+            "- タスク1：～～～ @高 @2023-10-31\n"
+            "  - サブタスク1：～～～ @中 @2023-10-25\n"
+            "  - サブタスク2：～～～ @低\n"
+            "- タスク2：～～～ @中"
         )
         sample_label = QLabel(sample_text)
         sample_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
