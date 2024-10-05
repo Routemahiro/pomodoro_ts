@@ -96,6 +96,7 @@ class TaskPanel(QWidget):
         self.task_manager = task_manager
         self.config = config
         self.ai_conversation_manager = ai_conversation_manager
+        self.import_widget = None  # インポートウィジェットの初期化
         self.setup_ui()
 
     def setup_ui(self):
@@ -139,7 +140,7 @@ class TaskPanel(QWidget):
         delete_task_button.clicked.connect(self.delete_task)
 
         import_task_button = create_button("タスクインポート", style_class="secondary")
-        import_task_button.clicked.connect(self.show_text_import_widget)
+        import_task_button.clicked.connect(self.toggle_text_import_widget)
 
         button_layout.addWidget(add_task_button)
         button_layout.addWidget(delete_task_button)
@@ -147,6 +148,12 @@ class TaskPanel(QWidget):
         layout.addLayout(button_layout)
 
         self.load_tasks()
+
+    def toggle_text_import_widget(self):
+        if self.import_widget is None:
+            self.show_text_import_widget()
+        else:
+            self.hide_text_import_widget()
 
     def eventFilter(self, source, event):
         if source == self.task_tree and event.type() == QEvent.ToolTip:
@@ -318,6 +325,9 @@ class TaskPanel(QWidget):
             item.setData(3, Qt.UserRole + 1, due_date_sort_value)
 
     def show_text_import_widget(self):
+        if self.import_widget is not None:
+            return
+
         # タスクインポートウィジェットを作成
         self.import_widget = QWidget()
         import_layout = QHBoxLayout(self.import_widget)
@@ -501,9 +511,10 @@ class TaskPanel(QWidget):
 
 
     def hide_text_import_widget(self):
-        # タスクインポートウィジェットを削除
-        self.import_widget.setParent(None)
-        self.import_widget = None
+        if self.import_widget:
+            self.import_widget.setParent(None)
+            self.import_widget.deleteLater()
+            self.import_widget = None
 
     def import_tasks_from_text(self):
         text = self.text_edit.toPlainText()
