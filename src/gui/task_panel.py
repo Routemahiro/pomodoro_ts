@@ -142,17 +142,18 @@ class TaskPanel(QWidget):
         import_task_button = create_button("タスクインポート", style_class="secondary")
         import_task_button.clicked.connect(self.toggle_text_import_widget)
 
-        # 「完了タスク非表示」チェックボックスを追加
-        self.hide_completed_checkbox = QCheckBox("完了タスク非表示")
-        self.hide_completed_checkbox.stateChanged.connect(self.load_tasks)
-
-        # チェックボックスを右詰めに配置
         button_layout.addWidget(add_task_button)
         button_layout.addWidget(delete_task_button)
         button_layout.addWidget(import_task_button)
-        button_layout.addStretch()  # スペースを埋めて右詰めにする
-        button_layout.addWidget(self.hide_completed_checkbox)
         layout.addLayout(button_layout)
+
+        # 「完了タスク非表示」チェックボックスを追加
+        checkbox_layout = QHBoxLayout()
+        self.hide_completed_checkbox = QCheckBox("完了タスク非表示")
+        self.hide_completed_checkbox.stateChanged.connect(self.load_tasks)
+        checkbox_layout.addStretch()  # 左側にスペースを追加して右詰めにする
+        checkbox_layout.addWidget(self.hide_completed_checkbox)
+        layout.addLayout(checkbox_layout)
 
         self.load_tasks()
 
