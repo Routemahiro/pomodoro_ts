@@ -462,22 +462,8 @@ class TaskPanel(QWidget):
         self.generate_button.setEnabled(False)
         self.generate_button.setText("生成中...")
 
-    def on_tasks_generated(self, generated_tasks):
-        # 入力テキストを基にタスクのツリー構造を作成
-        structured_tasks = self.create_task_structure(self.task_generation_edit.toPlainText())
-
-        # 生成されたタスクとツリー構造を組み合わせる
-        combined_tasks = self.combine_tasks(generated_tasks, structured_tasks)
-
-        # 組み合わせたタスクをテキストエディタに設定
-        self.text_edit.setPlainText(combined_tasks)
-
-        # ボタンを再度有効化し、テキストを元に戻す
-        self.generate_button.setEnabled(True)
-        self.generate_button.setText("タスク生成")
-
-    def create_task_structure(self, input_text):
-        lines = input_text.strip().split('\n')
+    def create_task_structure(self, input_text, deadline):
+        lines = f"{input_text} @{deadline}".strip().split('\n')
         structured_tasks = []
         current_indent = 0
         current_task = None
@@ -495,7 +481,20 @@ class TaskPanel(QWidget):
                 for _ in range((current_indent - indent) // 2):
                     task_stack.pop()
 
-            current_task = {'title': stripped_line, 'subtasks': []}
+            # タスク情報を解析
+            task_parts = stripped_line.split('@')
+            task_title = task_parts[0].strip()
+            task_info = {'title': task_title, 'subtasks': []}
+
+            # 優先度と期限を解析
+            for part in task_parts[1:]:
+                part = part.strip()
+                if part in ['高', '中', '低']:
+                    task_info['priority'] = part
+                elif part.count('-') == 2:  # 日付形式をチェック
+                    task_info['due_date'] = part
+
+            current_task = task_info
             if task_stack:
                 task_stack[-1]['subtasks'].append(current_task)
             else:
@@ -505,18 +504,34 @@ class TaskPanel(QWidget):
 
         return structured_tasks
 
+    def on_tasks_generated(self, generated_tasks):
+        # 入力テキストを基にタスクのツリー構造を作成
+        deadline = self.deadline_edit.dateTime().toString("yyyy-MM-dd")
+        structured_tasks = self.create_task_structure(self.task_generation_edit.toPlainText(), deadline)
+
+        # 生成されたタスクとツリー構造を組み合わせる
+        combined_tasks = self.combine_tasks(generated_tasks, structured_tasks)
+
+        # 組み合わせたタスクをテキストエディタに設定
+        self.text_edit.setPlainText(combined_tasks)
+
+        # ボタンを再度有効化し、テキストを元に戻す
+        self.generate_button.setEnabled(True)
+        self.generate_button.setText("タスク生成")
+
     def combine_tasks(self, generated_tasks, structured_tasks):
         combined = ""
         generated_lines = generated_tasks.strip().split('\n')
         task_index = 0
 
-        def add_task(line, indent):
+        def add_task(task, indent):
             nonlocal combined
-            stripped_line = line.lstrip()
-            if stripped_line.startswith('- '):
-                stripped_line = stripped_line[2:]
-            if stripped_line:  # 空の行を追加しない
-                combined += "  " * indent + "- " + stripped_line + "\n"
+            task_line = f"- {task['title']}"
+            if 'priority' in task:
+                task_line += f" @{task['priority']}"
+            if 'due_date' in task:
+                task_line += f" @{task['due_date']}"
+            combined += "  " * indent + task_line + "\n"
 
         def process_tasks(tasks, indent):
             nonlocal task_index, combined
@@ -524,22 +539,28 @@ class TaskPanel(QWidget):
                 if task_index < len(generated_lines):
                     current_line = generated_lines[task_index]
                     current_indent = len(current_line) - len(current_line.lstrip())
-                    add_task(current_line, indent + (current_indent // 2))
+                    generated_task = {'title': current_line.lstrip().lstrip('- ') }
+                    if 'priority' in task:
+                        generated_task['priority'] = task['priority']
+                    if 'due_date' in task:
+                        generated_task['due_date'] = task['due_date']
+                    add_task(generated_task, indent + (current_indent // 2))
                     task_index += 1
                 else:
-                    add_task(task['title'], indent)
+                    add_task(task, indent)
                 process_tasks(task.get('subtasks', []), indent + 1)
 
         # メインのタスクを追加
         if structured_tasks:
-            add_task(structured_tasks[0]['title'], 0)
+            add_task(structured_tasks[0], 0)
             process_tasks(structured_tasks[0].get('subtasks', []), 1)
 
         # 残りの生成されたタスクを追加
         while task_index < len(generated_lines):
             current_line = generated_lines[task_index]
             current_indent = len(current_line) - len(current_line.lstrip())
-            add_task(current_line, 1 + (current_indent // 2))
+            generated_task = {'title': current_line.lstrip().lstrip('- ') }
+            add_task(generated_task, 1 + (current_indent // 2))
             task_index += 1
 
         # 空行を削除
