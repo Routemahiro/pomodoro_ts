@@ -20,7 +20,7 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip, QStyleOptionViewItem, QMessageBox, QAbstractItemView  # 追加
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip, QStyleOptionViewItem, QMessageBox, QAbstractItemView, QCheckBox  # 追加
 from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent, QPoint
 
 from src.core.task_manager import TaskManager
@@ -131,7 +131,7 @@ class TaskPanel(QWidget):
         # タスクツリーにイベントフィルターを追加
         self.task_tree.installEventFilter(self)
 
-        # ボタン
+        # ボタンレイアウト
         button_layout = QHBoxLayout()
         add_task_button = create_button("タスク追加", style_class="primary")
         add_task_button.clicked.connect(self.add_task)
@@ -142,9 +142,16 @@ class TaskPanel(QWidget):
         import_task_button = create_button("タスクインポート", style_class="secondary")
         import_task_button.clicked.connect(self.toggle_text_import_widget)
 
+        # 「完了タスク非表示」チェックボックスを追加
+        self.hide_completed_checkbox = QCheckBox("完了タスク非表示")
+        self.hide_completed_checkbox.stateChanged.connect(self.load_tasks)
+
+        # チェックボックスを右詰めに配置
         button_layout.addWidget(add_task_button)
         button_layout.addWidget(delete_task_button)
         button_layout.addWidget(import_task_button)
+        button_layout.addStretch()  # スペースを埋めて右詰めにする
+        button_layout.addWidget(self.hide_completed_checkbox)
         layout.addLayout(button_layout)
 
         self.load_tasks()
@@ -173,10 +180,16 @@ class TaskPanel(QWidget):
     def load_tasks(self):
         self.task_tree.clear()
         tasks = self.task_manager.get_task_tree()
+
+        # 「完了タスク非表示」チェックボックスがオンの場合、完了タスクを除外
         for task in tasks:
             self.add_task_to_tree(task, self.task_tree.invisibleRootItem())
 
     def add_task_to_tree(self, task, parent_item):
+        # 「完了タスク非表示」がオンで、タスクが「完了」状態の場合は表示しない
+        if self.hide_completed_checkbox.isChecked() and task.status == TaskStatus.COMPLETED:
+            return
+
         due_date = task.due_date.strftime("%Y-%m-%d %H:%M") if task.due_date else ""
         item = CustomTreeWidgetItem(parent_item, [task.title, task.status.value, task.priority.value, due_date])
         item.setFlags(item.flags() | Qt.ItemIsEditable)
