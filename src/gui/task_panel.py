@@ -20,7 +20,7 @@
 - タスクの変更はリアルタイムでデータベースと同期すること
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip, QStyleOptionViewItem
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip, QStyleOptionViewItem, QMessageBox, QAbstractItemView  # 追加
 from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent, QPoint
 
 from src.core.task_manager import TaskManager
@@ -106,6 +106,9 @@ class TaskPanel(QWidget):
         self.task_tree.setHeaderLabels(["タスク", "状態", "優先度", "期限"])
         self.task_tree.setDragDropMode(QTreeWidget.InternalMove)
         self.task_tree.itemChanged.connect(self.on_task_changed)
+
+        # 複数選択を可能にする
+        self.task_tree.setSelectionMode(QTreeWidget.ExtendedSelection)
 
         # ソートを有効にする
         self.task_tree.setSortingEnabled(True)
@@ -272,9 +275,16 @@ class TaskPanel(QWidget):
     def delete_task(self):
         selected_items = self.task_tree.selectedItems()
         if selected_items:
-            task_id = selected_items[0].data(0, Qt.UserRole)
-            self.task_manager.delete_task(task_id)
-            self.load_tasks()
+            # 確認ダイアログを表示
+            count = len(selected_items)
+            message = f"{count}個のタスクを削除しますか？" if count > 1 else "選択したタスクを削除しますか？"
+            reply = QMessageBox.question(self, '確認', message, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            
+            if reply == QMessageBox.Yes:
+                for item in selected_items:
+                    task_id = item.data(0, Qt.UserRole)
+                    self.task_manager.delete_task(task_id)
+                self.load_tasks()
 
     def on_task_changed(self, item, column):
         task_id = item.data(0, Qt.UserRole)
