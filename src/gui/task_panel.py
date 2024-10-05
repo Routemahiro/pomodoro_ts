@@ -21,7 +21,7 @@
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTreeWidget, QTreeWidgetItem, QPushButton, QHBoxLayout, QInputDialog, QDateEdit, QTimeEdit, QRadioButton, QButtonGroup, QDialog, QLabel, QComboBox, QStyledItemDelegate, QTextEdit, QDateTimeEdit, QToolTip, QStyleOptionViewItem, QMessageBox, QAbstractItemView, QCheckBox  # 追加
-from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent, QPoint
+from PySide6.QtCore import Qt, QDate, QTime, QDateTime, QEvent, QPoint, QThread, Signal
 
 from src.core.task_manager import TaskManager
 from src.utils.ui_helpers import create_button
@@ -88,6 +88,42 @@ class TaskDelegate(QStyledItemDelegate):
             model.setData(index, new_due_date, Qt.EditRole)
         else:
             super().setModelData(editor, model, index)
+
+
+class TaskGenerationThread(QThread):
+    taskGenerated = Signal(str)
+
+    def __init__(self, ai_interface, input_text, deadline, current_time):
+        super().__init__()
+        self.ai_interface = ai_interface
+        self.input_text = input_text
+        self.deadline = deadline
+        self.current_time = current_time
+
+    def run(self):
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        generate_task_path = os.path.join(script_dir, '..', '..', 'data', 'generate_task.txt')
+        with open(generate_task_path, 'r', encoding='utf-8') as file:
+            prompt_template = file.read()
+
+        prompt = prompt_template.format(
+            input_text=self.input_text,
+            実行時の日時=self.current_time,
+            deadline=self.deadline
+        )
+
+        generated_tasks = self.ai_interface.send_message(prompt, model="gpt-4o", include_history=False)
+        prompt2 = ("あなたは作業対象の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
+           + """【指定の形式】
+
+- {タスク1} @高 @2023-10-30\n
+  - {サブタスク1} @中 @2023-10-25\n 
+  - {サブタスク2} @低 @2023-10-24\n
+- {タスク2} @中 @2023-11-01\n【作業対象の文章】\n"""
+           + generated_tasks)
+        
+        generated_tasks2 = self.ai_interface.send_message(prompt2, model="gpt-3.5-turbo", include_history=False)
+        self.taskGenerated.emit(generated_tasks2)
 
 
 class TaskPanel(QWidget):
@@ -373,9 +409,9 @@ class TaskPanel(QWidget):
         left_layout.addLayout(deadline_layout)
 
         # タスク生成ボタン
-        generate_button = create_button("タスク生成", style_class="primary")
-        generate_button.clicked.connect(self.generate_task_suggestions)
-        left_layout.addWidget(generate_button)
+        self.generate_button = create_button("タスク生成", style_class="primary")
+        self.generate_button.clicked.connect(self.generate_task_suggestions)
+        left_layout.addWidget(self.generate_button)
 
         import_layout.addLayout(left_layout)
 
@@ -415,41 +451,30 @@ class TaskPanel(QWidget):
         deadline = self.deadline_edit.dateTime().toString("yyyy/MM/dd HH:mm")
         current_time = datetime.now().strftime("%Y/%m/%d %H:%M")
 
-        # generate_task.txtの内容を読み込む
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        generate_task_path = os.path.join(script_dir, '..', '..', 'data', 'generate_task.txt')
-        with open(generate_task_path, 'r', encoding='utf-8') as file:
-            prompt_template = file.read()
-
-        # プロンプトを作成
-        prompt = prompt_template.format(
-            input_text=input_text,
-            実行時の日時=current_time,
-            deadline=deadline
-        )
-
         # AIインターフェースを使用してタスクを生成
         ai_interface = AIInterface(self.config, self.ai_conversation_manager)
-        generated_tasks = ai_interface.send_message(prompt, model="gpt-4o",include_history=False)
-        prompt2 = ("あなたは作業対象の文章からタスクのみを抽出し、指定の形式に従って出力してください\n" 
-           + """【指定の形式】
-
-- {タスク1} @高 @2023-10-30\n
-  - {サブタスク1} @中 @2023-10-25\n 
-  - {サブタスク2} @低 @2023-10-24\n
-- {タスク2} @中 @2023-11-01\n【作業対象の文章】\n"""
-           + generated_tasks)
         
-        generated_tasks2 = ai_interface.send_message(prompt2, model="gpt-3.5-turbo",include_history=False)
+        self.generation_thread = TaskGenerationThread(ai_interface, input_text, deadline, current_time)
+        self.generation_thread.taskGenerated.connect(self.on_tasks_generated)
+        self.generation_thread.start()
 
+        # ボタンを無効化し、進行状況を表示
+        self.generate_button.setEnabled(False)
+        self.generate_button.setText("生成中...")
+
+    def on_tasks_generated(self, generated_tasks):
         # 入力テキストを基にタスクのツリー構造を作成
-        structured_tasks = self.create_task_structure(input_text)
+        structured_tasks = self.create_task_structure(self.task_generation_edit.toPlainText())
 
         # 生成されたタスクとツリー構造を組み合わせる
-        combined_tasks = self.combine_tasks(generated_tasks2, structured_tasks)
+        combined_tasks = self.combine_tasks(generated_tasks, structured_tasks)
 
         # 組み合わせたタスクをテキストエディタに設定
         self.text_edit.setPlainText(combined_tasks)
+
+        # ボタンを再度有効化し、テキストを元に戻す
+        self.generate_button.setEnabled(True)
+        self.generate_button.setText("タスク生成")
 
     def create_task_structure(self, input_text):
         lines = input_text.strip().split('\n')
