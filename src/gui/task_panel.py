@@ -522,7 +522,6 @@ class TaskPanel(QWidget):
     def combine_tasks(self, generated_tasks, structured_tasks):
         combined = ""
         generated_lines = generated_tasks.strip().split('\n')
-        generated_lines.reverse()  # 生成されたタスクを逆順にする
         task_index = 0
 
         def add_task(task, indent):
